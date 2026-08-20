@@ -1,53 +1,58 @@
-const BUILD = 'v7';
+const BUILD = 'v8';
 
 const SCENES = {
   camp: {
-    name: 'Camp perimeter',
-    image: './assets/scenes/camp.avif?v=7',
-    hint: 'The biodiversity team marked a route east of camp.',
-    exits: { forward: 'trail' },
-    hotspot: [38, 18, 46, 58]
+    name: 'Field camp',
+    image: './assets/scenes/camp.avif?v=8',
+    hint: 'The marked route leaves the camp through the vegetation ahead.',
+    forward: 'trail',
+    back: null,
+    hotspot: [35, 12, 52, 74]
   },
   trail: {
-    name: 'Jungle approach',
-    image: './assets/scenes/trail.avif?v=7',
-    hint: 'The survey markers continue deeper into the forest.',
-    exits: { forward: 'anomaly', back: 'camp' },
-    hotspot: [33, 16, 38, 60]
+    name: 'Survey trail',
+    image: './assets/scenes/trail.avif?v=8',
+    hint: 'Follow the survey route deeper into the forest.',
+    forward: 'anomaly',
+    back: 'camp',
+    hotspot: [31, 12, 44, 76]
   },
   anomaly: {
-    name: 'Marked clearing',
-    image: './assets/scenes/anomaly.avif?v=7',
-    hint: 'The team flagged something beneath the roots ahead.',
-    exits: { forward: 'entrance', back: 'trail' },
-    hotspot: [31, 18, 42, 58]
+    name: 'Survey anomaly',
+    image: './assets/scenes/anomaly.avif?v=8',
+    hint: 'The markers converge on something that does not belong here.',
+    forward: 'entrance',
+    back: 'trail',
+    hotspot: [29, 15, 46, 68]
   },
   entrance: {
     name: 'Buried access',
-    image: './assets/scenes/entrance.avif?v=7',
-    hint: 'The geometry is artificial. The opening continues inward.',
-    exits: { forward: 'lab', back: 'anomaly' },
-    hotspot: [29, 20, 44, 56]
+    image: './assets/scenes/entrance.avif?v=8',
+    hint: 'The opening is the only obvious way forward.',
+    forward: 'lab',
+    back: 'anomaly',
+    hotspot: [30, 17, 43, 62]
   },
   lab: {
-    name: 'Containment hall',
-    image: './assets/scenes/lab.avif?v=7',
-    hint: 'This place was not built for a biodiversity survey.',
-    exits: { back: 'entrance' },
+    name: 'Interior',
+    image: './assets/scenes/lab.avif?v=8',
+    hint: 'There is nothing else to open in this navigation test.',
+    forward: null,
+    back: 'entrance',
     hotspot: null
   }
 };
 
+const game = document.getElementById('game');
 const sceneFrame = document.querySelector('.scene-frame');
 const sceneImage = document.getElementById('sceneImage');
 const backdropImage = document.getElementById('backdropImage');
 const hotspotLayer = document.getElementById('hotspotLayer');
-const nav = document.getElementById('nav');
 const sceneToast = document.getElementById('sceneToast');
 const echoLayer = document.getElementById('echoLayer');
+const backBtn = document.getElementById('backBtn');
 const inventoryBtn = document.getElementById('inventoryBtn');
-const inventoryDrawer = document.getElementById('inventoryDrawer');
-const inventoryClose = document.getElementById('inventoryClose');
+const inventoryTray = document.getElementById('inventoryTray');
 const hintBtn = document.getElementById('hintBtn');
 const hintToast = document.getElementById('hintToast');
 const assetError = document.getElementById('assetError');
@@ -73,57 +78,51 @@ function loadImage(src) {
   });
 }
 
-function showSceneToast(text) {
-  clearTimeout(toastTimer);
-  sceneToast.textContent = text;
-  sceneToast.classList.add('show');
-  toastTimer = window.setTimeout(() => sceneToast.classList.remove('show'), 1200);
-}
-
-function showHint() {
-  clearTimeout(hintTimer);
-  hintToast.textContent = SCENES[currentId].hint;
-  hintToast.classList.add('show');
-  hintTimer = window.setTimeout(() => hintToast.classList.remove('show'), 3200);
-}
-
 function echoAt(x, y) {
   const dot = document.createElement('span');
   dot.className = 'tap-echo';
   dot.style.left = `${x}px`;
   dot.style.top = `${y}px`;
   echoLayer.appendChild(dot);
-  window.setTimeout(() => dot.remove(), 650);
+  window.setTimeout(() => dot.remove(), 620);
 }
 
-function makeArrow(direction, to) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = `nav-arrow nav-${direction}`;
-  button.setAttribute('aria-label', `${direction === 'forward' ? 'Continue to' : 'Return to'} ${SCENES[to].name}`);
-  button.innerHTML = '<span aria-hidden="true"></span>';
-  button.addEventListener('pointerdown', event => echoAt(event.clientX, event.clientY));
-  button.addEventListener('click', event => {
-    event.stopPropagation();
-    void goTo(to);
-  });
-  return button;
+function showSceneToast(text) {
+  clearTimeout(toastTimer);
+  sceneToast.textContent = text;
+  sceneToast.classList.add('show');
+  toastTimer = window.setTimeout(() => sceneToast.classList.remove('show'), 900);
 }
 
-function renderNav(scene) {
-  nav.replaceChildren();
-  if (scene.exits.forward) nav.appendChild(makeArrow('forward', scene.exits.forward));
-  if (scene.exits.back) nav.appendChild(makeArrow('back', scene.exits.back));
+function showHint() {
+  clearTimeout(hintTimer);
+  hintToast.textContent = SCENES[currentId].hint;
+  hintToast.classList.add('show');
+  hintTimer = window.setTimeout(() => hintToast.classList.remove('show'), 3000);
+}
+
+function setInventory(open) {
+  inventoryTray.classList.toggle('open', open);
+  inventoryTray.setAttribute('aria-hidden', String(!open));
+  inventoryBtn.setAttribute('aria-expanded', String(open));
+}
+
+function renderBack(scene) {
+  backBtn.hidden = !scene.back;
+  if (scene.back) {
+    backBtn.setAttribute('aria-label', `Go back to ${SCENES[scene.back].name}`);
+  }
 }
 
 function renderHotspot(scene) {
   hotspotLayer.replaceChildren();
-  if (!scene.hotspot || !scene.exits.forward) return;
+  if (!scene.hotspot || !scene.forward) return;
+
   const [x, y, w, h] = scene.hotspot;
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'scene-hotspot';
-  button.setAttribute('aria-label', `Continue to ${SCENES[scene.exits.forward].name}`);
+  button.setAttribute('aria-label', `Explore ${SCENES[scene.forward].name}`);
   Object.assign(button.style, {
     left: `${x}%`,
     top: `${y}%`,
@@ -133,7 +132,7 @@ function renderHotspot(scene) {
   button.addEventListener('pointerdown', event => echoAt(event.clientX, event.clientY));
   button.addEventListener('click', event => {
     event.stopPropagation();
-    void goTo(scene.exits.forward);
+    void goTo(scene.forward);
   });
   hotspotLayer.appendChild(button);
 }
@@ -141,6 +140,7 @@ function renderHotspot(scene) {
 async function goTo(id, initial = false) {
   const scene = SCENES[id];
   if (!scene) return;
+
   const token = ++transitionToken;
   assetError.hidden = true;
   document.body.classList.add('is-loading');
@@ -150,41 +150,45 @@ async function goTo(id, initial = false) {
     if (token !== transitionToken) return;
 
     currentId = id;
-    document.getElementById('game').dataset.scene = id;
+    game.dataset.scene = id;
     sceneImage.src = scene.image;
-    sceneImage.alt = '';
     backdropImage.src = scene.image;
+    sceneImage.alt = '';
     backdropImage.alt = '';
 
-    const safeWidth = Math.max(720, Math.min(1180, decoded.naturalWidth));
-    sceneFrame.style.setProperty('--scene-max-width', `${safeWidth}px`);
+    // Never enlarge a scene beyond its real pixel width on desktop.
+    // This keeps navigation assets crisp until the final HD art pipeline is in place.
+    sceneFrame.style.setProperty('--scene-max-width', `${Math.min(1600, decoded.naturalWidth)}px`);
     sceneFrame.dataset.ready = 'true';
 
-    renderNav(scene);
+    renderBack(scene);
     renderHotspot(scene);
+    setInventory(false);
     showSceneToast(scene.name);
+
     if (!initial) history.replaceState(null, '', `#${id}`);
   } catch (error) {
     console.error(`[${BUILD}] scene asset error`, id, error);
     assetError.hidden = false;
     assetError.querySelector('strong').textContent = 'Scene image unavailable';
-    assetError.querySelector('span').textContent = 'The scene asset could not be decoded. This build is blocked.';
+    assetError.querySelector('span').textContent = 'The scene asset could not be decoded.';
   } finally {
     if (token === transitionToken) document.body.classList.remove('is-loading');
   }
 }
 
-function setInventory(open) {
-  inventoryDrawer.classList.toggle('open', open);
-  inventoryDrawer.setAttribute('aria-hidden', String(!open));
-  inventoryBtn.setAttribute('aria-expanded', String(open));
-}
+backBtn.addEventListener('pointerdown', event => echoAt(event.clientX, event.clientY));
+backBtn.addEventListener('click', event => {
+  event.stopPropagation();
+  const target = SCENES[currentId].back;
+  if (target) void goTo(target);
+});
 
 inventoryBtn.addEventListener('click', event => {
   event.stopPropagation();
-  setInventory(!inventoryDrawer.classList.contains('open'));
+  setInventory(!inventoryTray.classList.contains('open'));
 });
-inventoryClose.addEventListener('click', () => setInventory(false));
+
 hintBtn.addEventListener('click', event => {
   event.stopPropagation();
   showHint();
@@ -192,14 +196,14 @@ hintBtn.addEventListener('click', event => {
 
 document.addEventListener('pointerdown', event => {
   const target = event.target;
-  if (target.closest('button') || target.closest('#inventoryDrawer')) return;
+  if (target.closest('button') || target.closest('#inventoryTray')) return;
   echoAt(event.clientX, event.clientY);
 }, { passive: true });
 
 document.addEventListener('keydown', event => {
   const scene = SCENES[currentId];
-  if ((event.key === 'ArrowUp' || event.key === 'ArrowRight') && scene.exits.forward) void goTo(scene.exits.forward);
-  if ((event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'Escape') && scene.exits.back) void goTo(scene.exits.back);
+  if ((event.key === 'ArrowLeft' || event.key === 'Escape') && scene.back) void goTo(scene.back);
+  if (event.key === 'Enter' && scene.forward) void goTo(scene.forward);
 });
 
 async function boot() {
