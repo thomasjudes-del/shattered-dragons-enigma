@@ -1,52 +1,51 @@
+import expeditionData from './assets/expedition.js';
 import trailA from './assets/trail-a.js';
 import trailB from './assets/trail-b.js';
-import anomalyData from './assets/anomaly.js';
 import entranceData from './assets/entrance.js';
 import labData from './assets/lab.js';
 
-const BUILD = 'v9.3';
-const dataUrl = value => value.startsWith('data:') ? value : `data:image/webp;base64,${value}`;
+const BUILD = 'v9.4';
+const dataUrl = (value) => value.startsWith('data:') ? value : `data:image/webp;base64,${value}`;
 
 const SCENES = {
   camp: {
-    image: './assets/scene-camp.webp?v=93',
-    next: 'trail',
+    src: null,
+    next: 'expedition',
     back: null,
-    hotspot: [44, 18, 46, 66],
-    hint: 'The survey route continues beyond the field camp.'
+    hotspot: [49, 18, 48, 70],
+    hint: 'The survey team is waiting beyond the camp.'
+  },
+  expedition: {
+    src: dataUrl(expeditionData),
+    next: 'trail',
+    back: 'camp',
+    hotspot: [52, 12, 46, 78],
+    hint: 'Follow the expedition route into the forest.'
   },
   trail: {
-    image: dataUrl(trailA + trailB),
-    next: 'anomaly',
-    back: 'camp',
-    hotspot: [34, 12, 38, 72],
-    hint: 'Follow the survey markers deeper into the forest.'
-  },
-  anomaly: {
-    image: dataUrl(anomalyData),
+    src: dataUrl(trailA + trailB),
     next: 'entrance',
-    back: 'trail',
-    hotspot: [34, 18, 38, 62],
-    hint: 'Something ahead does not belong in a biodiversity survey.'
+    back: 'expedition',
+    hotspot: [38, 18, 36, 68],
+    hint: 'The route ends at something that should not be here.'
   },
   entrance: {
-    image: dataUrl(entranceData),
+    src: dataUrl(entranceData),
     next: 'lab',
-    back: 'anomaly',
-    hotspot: [31, 19, 42, 62],
-    hint: 'The opening is the only visible route forward.'
+    back: 'trail',
+    hotspot: [34, 24, 38, 64],
+    hint: 'The buried entrance is the only way forward.'
   },
   lab: {
-    image: dataUrl(labData),
+    src: dataUrl(labData),
     next: null,
     back: 'entrance',
     hotspot: null,
-    hint: 'End of this navigation slice.'
+    hint: 'End of the V0 navigation slice.'
   }
 };
 
 const game = document.getElementById('game');
-const sceneFrame = document.getElementById('sceneFrame');
 const sceneImage = document.getElementById('sceneImage');
 const hotspotLayer = document.getElementById('hotspotLayer');
 const hintBtn = document.getElementById('hintBtn');
@@ -58,26 +57,50 @@ const errorBox = document.getElementById('errorBox');
 const echoLayer = document.getElementById('echoLayer');
 
 let current = 'camp';
-let transitionToken = 0;
+let busy = false;
 let hintTimer = null;
+const decoded = new Map();
 
-function preload(src) {
+function fatal(message) {
+  game.dataset.assetsReady = 'false';
+  errorBox.textContent = message;
+  errorBox.hidden = false;
+  sceneImage.removeAttribute('src');
+  hotspotLayer.replaceChildren();
+}
+
+async function loadCampText() {
+  const response = await fetch(`./assets/scene-camp.webp?v=94`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`camp asset HTTP ${response.status}`);
+  const text = (await response.text()).trim();
+  if (!/^UklG[A-Za-z0-9+/=]+$/.test(text) || text.length < 10000) {
+    throw new Error('camp asset is not valid base64 WebP text');
+  }
+  return dataUrl(text);
+}
+
+function decodeImage(name, src) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = 'async';
-    img.onload = () => img.naturalWidth && img.naturalHeight ? resolve(img) : reject(new Error('Image has no dimensions'));
-    img.onerror = () => reject(new Error('Image failed to decode'));
-    img.src = src;
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      if (image.naturalWidth < 900 || image.naturalHeight < 500) {
+        reject(new Error(`${name} decoded at only ${image.naturalWidth}x${image.naturalHeight}`));
+        return;
+      }
+      decoded.set(name, { width: image.naturalWidth, height: image.naturalHeight });
+      resolve();
+    };
+    image.onerror = () => reject(new Error(`${name} failed to decode`));
+    image.src = src;
   });
 }
 
-function echo(x, y) {
-  const ripple = document.createElement('span');
-  ripple.className = 'tap-echo';
-  ripple.style.left = `${x}px`;
-  ripple.style.top = `${y}px`;
-  echoLayer.appendChild(ripple);
-  setTimeout(() => ripple.remove(), 600);
+async function validateAllAssets() {
+  SCENES.camp.src = await loadCampText();
+  for (const [name, scene] of Object.entries(SCENES)) {
+    await decodeImage(name, scene.src);
+  }
 }
 
 function setInventory(open) {
@@ -90,95 +113,101 @@ function showHint() {
   clearTimeout(hintTimer);
   hintToast.textContent = SCENES[current].hint;
   hintToast.classList.add('show');
-  hintTimer = setTimeout(() => hintToast.classList.remove('show'), 2800);
+  hintTimer = setTimeout(() => hintToast.classList.remove('show'), 2600);
+}
+
+function echo(x, y) {
+  const ripple = document.createElement('span');
+  ripple.className = 'tap-echo';
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  echoLayer.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 450);
 }
 
 function renderHotspot(scene) {
   hotspotLayer.replaceChildren();
-  if (!scene.next || !scene.hotspot) return;
-  const [x, y, w, h] = scene.hotspot;
+  if (!scene.hotspot || !scene.next) return;
+  const [left, top, width, height] = scene.hotspot;
   const button = document.createElement('button');
-  button.className = 'scene-hotspot';
   button.type = 'button';
-  button.setAttribute('aria-label', 'Continue');
-  Object.assign(button.style, { left: `${x}%`, top: `${y}%`, width: `${w}%`, height: `${h}%` });
-  button.addEventListener('pointerdown', e => echo(e.clientX, e.clientY));
-  button.addEventListener('click', e => {
-    e.stopPropagation();
-    void goTo(scene.next);
+  button.className = 'advance-hotspot';
+  button.setAttribute('aria-label', 'Explore scene');
+  button.style.left = `${left}%`;
+  button.style.top = `${top}%`;
+  button.style.width = `${width}%`;
+  button.style.height = `${height}%`;
+  button.addEventListener('click', (event) => {
+    echo(event.clientX, event.clientY);
+    go(scene.next);
   });
   hotspotLayer.appendChild(button);
 }
 
-async function goTo(id, initial = false) {
-  const scene = SCENES[id];
-  if (!scene) return;
-  const token = ++transitionToken;
+async function go(name) {
+  if (busy || !SCENES[name]) return;
+  busy = true;
+  const scene = SCENES[name];
+  setInventory(false);
   errorBox.hidden = true;
-  document.body.classList.add('loading');
+  sceneImage.classList.add('changing');
   try {
-    await preload(scene.image);
-    if (token !== transitionToken) return;
-    current = id;
-    game.dataset.scene = id;
-    sceneFrame.classList.remove('ready');
-    sceneImage.src = scene.image;
-    requestAnimationFrame(() => sceneFrame.classList.add('ready'));
+    const preload = new Image();
+    await new Promise((resolve, reject) => {
+      preload.onload = resolve;
+      preload.onerror = reject;
+      preload.src = scene.src;
+    });
+    current = name;
+    game.dataset.scene = name;
+    sceneImage.src = scene.src;
+    sceneImage.alt = `${name} scene`;
     backBtn.hidden = !scene.back;
     renderHotspot(scene);
-    setInventory(false);
-    if (!initial) history.replaceState(null, '', `#${id}`);
-  } catch (error) {
-    console.error(`[${BUILD}]`, id, error);
-    errorBox.textContent = 'Scene failed to load.';
-    errorBox.hidden = false;
+    requestAnimationFrame(() => sceneImage.classList.remove('changing'));
+  } catch {
+    fatal(`Scene failed to load: ${name}`);
   } finally {
-    if (token === transitionToken) document.body.classList.remove('loading');
+    busy = false;
   }
 }
 
-backBtn.addEventListener('pointerdown', e => echo(e.clientX, e.clientY));
-backBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  const previous = SCENES[current].back;
-  if (previous) void goTo(previous);
+backBtn.addEventListener('click', () => {
+  const back = SCENES[current].back;
+  if (back) go(back);
 });
 
-hintBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  showHint();
+hintBtn.addEventListener('click', showHint);
+satchelBtn.addEventListener('click', () => setInventory(!inventory.classList.contains('open')));
+
+inventory.addEventListener('click', (event) => {
+  if (event.target === inventory) setInventory(false);
 });
 
-satchelBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  setInventory(!inventory.classList.contains('open'));
-});
-
-document.addEventListener('pointerdown', e => {
-  if (e.target.closest('button') || e.target.closest('#inventory')) return;
-  echo(e.clientX, e.clientY);
-}, { passive: true });
-
-document.addEventListener('keydown', e => {
-  if ((e.key === 'ArrowLeft' || e.key === 'Escape') && SCENES[current].back) void goTo(SCENES[current].back);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') setInventory(false);
+  if (event.key === 'ArrowLeft' && SCENES[current].back) go(SCENES[current].back);
 });
 
 async function boot() {
+  game.dataset.build = BUILD;
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map(r => r.unregister()));
+      await Promise.all(regs.map((reg) => reg.unregister()));
     }
     if ('caches' in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.map(key => caches.delete(key)));
+      await Promise.all(keys.map((key) => caches.delete(key)));
     }
-  } catch (e) {
-    console.warn(`[${BUILD}] cache cleanup skipped`, e);
+    await validateAllAssets();
+    game.dataset.assetsReady = 'true';
+    game.dataset.assetDimensions = JSON.stringify(Object.fromEntries(decoded));
+    await go('camp');
+  } catch (error) {
+    console.error('[SDE boot]', error);
+    fatal(`Asset validation failed: ${error.message}`);
   }
-  const hash = location.hash.slice(1);
-  await goTo(SCENES[hash] ? hash : 'camp', true);
-  Object.values(SCENES).forEach(scene => preload(scene.image).catch(() => {}));
 }
 
-void boot();
+boot();
