@@ -1,138 +1,111 @@
-const BUILD = 'v8';
+import trailA from './assets/trail-a.js';
+import trailB from './assets/trail-b.js';
+import anomalyData from './assets/anomaly.js';
+import entranceData from './assets/entrance.js';
+import labData from './assets/lab.js';
+
+const BUILD = 'v9.3';
+const dataUrl = value => value.startsWith('data:') ? value : `data:image/webp;base64,${value}`;
 
 const SCENES = {
   camp: {
-    name: 'Field camp',
-    image: './assets/scenes/camp.avif?v=8',
-    hint: 'The marked route leaves the camp through the vegetation ahead.',
-    forward: 'trail',
+    image: './assets/scene-camp.webp?v=93',
+    next: 'trail',
     back: null,
-    hotspot: [35, 12, 52, 74]
+    hotspot: [44, 18, 46, 66],
+    hint: 'The survey route continues beyond the field camp.'
   },
   trail: {
-    name: 'Survey trail',
-    image: './assets/scenes/trail.avif?v=8',
-    hint: 'Follow the survey route deeper into the forest.',
-    forward: 'anomaly',
+    image: dataUrl(trailA + trailB),
+    next: 'anomaly',
     back: 'camp',
-    hotspot: [31, 12, 44, 76]
+    hotspot: [34, 12, 38, 72],
+    hint: 'Follow the survey markers deeper into the forest.'
   },
   anomaly: {
-    name: 'Survey anomaly',
-    image: './assets/scenes/anomaly.avif?v=8',
-    hint: 'The markers converge on something that does not belong here.',
-    forward: 'entrance',
+    image: dataUrl(anomalyData),
+    next: 'entrance',
     back: 'trail',
-    hotspot: [29, 15, 46, 68]
+    hotspot: [34, 18, 38, 62],
+    hint: 'Something ahead does not belong in a biodiversity survey.'
   },
   entrance: {
-    name: 'Buried access',
-    image: './assets/scenes/entrance.avif?v=8',
-    hint: 'The opening is the only obvious way forward.',
-    forward: 'lab',
+    image: dataUrl(entranceData),
+    next: 'lab',
     back: 'anomaly',
-    hotspot: [30, 17, 43, 62]
+    hotspot: [31, 19, 42, 62],
+    hint: 'The opening is the only visible route forward.'
   },
   lab: {
-    name: 'Interior',
-    image: './assets/scenes/lab.avif?v=8',
-    hint: 'There is nothing else to open in this navigation test.',
-    forward: null,
+    image: dataUrl(labData),
+    next: null,
     back: 'entrance',
-    hotspot: null
+    hotspot: null,
+    hint: 'End of this navigation slice.'
   }
 };
 
 const game = document.getElementById('game');
-const sceneFrame = document.querySelector('.scene-frame');
+const sceneFrame = document.getElementById('sceneFrame');
 const sceneImage = document.getElementById('sceneImage');
-const backdropImage = document.getElementById('backdropImage');
 const hotspotLayer = document.getElementById('hotspotLayer');
-const sceneToast = document.getElementById('sceneToast');
-const echoLayer = document.getElementById('echoLayer');
-const backBtn = document.getElementById('backBtn');
-const inventoryBtn = document.getElementById('inventoryBtn');
-const inventoryTray = document.getElementById('inventoryTray');
 const hintBtn = document.getElementById('hintBtn');
+const backBtn = document.getElementById('backBtn');
+const satchelBtn = document.getElementById('satchelBtn');
+const inventory = document.getElementById('inventory');
 const hintToast = document.getElementById('hintToast');
-const assetError = document.getElementById('assetError');
+const errorBox = document.getElementById('errorBox');
+const echoLayer = document.getElementById('echoLayer');
 
-let currentId = 'camp';
+let current = 'camp';
 let transitionToken = 0;
-let toastTimer = null;
 let hintTimer = null;
 
-function loadImage(src) {
+function preload(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = 'async';
-    img.onload = () => {
-      if (!img.naturalWidth || !img.naturalHeight) {
-        reject(new Error(`Image has no intrinsic dimensions: ${src}`));
-        return;
-      }
-      resolve(img);
-    };
-    img.onerror = () => reject(new Error(`Image failed to decode: ${src}`));
+    img.onload = () => img.naturalWidth && img.naturalHeight ? resolve(img) : reject(new Error('Image has no dimensions'));
+    img.onerror = () => reject(new Error('Image failed to decode'));
     img.src = src;
   });
 }
 
-function echoAt(x, y) {
-  const dot = document.createElement('span');
-  dot.className = 'tap-echo';
-  dot.style.left = `${x}px`;
-  dot.style.top = `${y}px`;
-  echoLayer.appendChild(dot);
-  window.setTimeout(() => dot.remove(), 620);
+function echo(x, y) {
+  const ripple = document.createElement('span');
+  ripple.className = 'tap-echo';
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  echoLayer.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
 }
 
-function showSceneToast(text) {
-  clearTimeout(toastTimer);
-  sceneToast.textContent = text;
-  sceneToast.classList.add('show');
-  toastTimer = window.setTimeout(() => sceneToast.classList.remove('show'), 900);
+function setInventory(open) {
+  inventory.classList.toggle('open', open);
+  inventory.setAttribute('aria-hidden', String(!open));
+  satchelBtn.setAttribute('aria-expanded', String(open));
 }
 
 function showHint() {
   clearTimeout(hintTimer);
-  hintToast.textContent = SCENES[currentId].hint;
+  hintToast.textContent = SCENES[current].hint;
   hintToast.classList.add('show');
-  hintTimer = window.setTimeout(() => hintToast.classList.remove('show'), 3000);
-}
-
-function setInventory(open) {
-  inventoryTray.classList.toggle('open', open);
-  inventoryTray.setAttribute('aria-hidden', String(!open));
-  inventoryBtn.setAttribute('aria-expanded', String(open));
-}
-
-function renderBack(scene) {
-  backBtn.hidden = !scene.back;
-  if (scene.back) {
-    backBtn.setAttribute('aria-label', `Go back to ${SCENES[scene.back].name}`);
-  }
+  hintTimer = setTimeout(() => hintToast.classList.remove('show'), 2800);
 }
 
 function renderHotspot(scene) {
   hotspotLayer.replaceChildren();
-  if (!scene.hotspot || !scene.forward) return;
-
+  if (!scene.next || !scene.hotspot) return;
   const [x, y, w, h] = scene.hotspot;
   const button = document.createElement('button');
-  button.type = 'button';
   button.className = 'scene-hotspot';
-  button.setAttribute('aria-label', `Explore ${SCENES[scene.forward].name}`);
-  Object.assign(button.style, {
-    left: `${x}%`,
-    top: `${y}%`,
-    width: `${w}%`,
-    height: `${h}%`
-  });
-  button.addEventListener('pointerdown', event => echoAt(event.clientX, event.clientY));
-  button.addEventListener('click', event => {
-    event.stopPropagation();
-    void goTo(scene.forward);
+  button.type = 'button';
+  button.setAttribute('aria-label', 'Continue');
+  Object.assign(button.style, { left: `${x}%`, top: `${y}%`, width: `${w}%`, height: `${h}%` });
+  button.addEventListener('pointerdown', e => echo(e.clientX, e.clientY));
+  button.addEventListener('click', e => {
+    e.stopPropagation();
+    void goTo(scene.next);
   });
   hotspotLayer.appendChild(button);
 }
@@ -140,93 +113,72 @@ function renderHotspot(scene) {
 async function goTo(id, initial = false) {
   const scene = SCENES[id];
   if (!scene) return;
-
   const token = ++transitionToken;
-  assetError.hidden = true;
-  document.body.classList.add('is-loading');
-
+  errorBox.hidden = true;
+  document.body.classList.add('loading');
   try {
-    const decoded = await loadImage(scene.image);
+    await preload(scene.image);
     if (token !== transitionToken) return;
-
-    currentId = id;
+    current = id;
     game.dataset.scene = id;
+    sceneFrame.classList.remove('ready');
     sceneImage.src = scene.image;
-    backdropImage.src = scene.image;
-    sceneImage.alt = '';
-    backdropImage.alt = '';
-
-    // Never enlarge a scene beyond its real pixel width on desktop.
-    // This keeps navigation assets crisp until the final HD art pipeline is in place.
-    sceneFrame.style.setProperty('--scene-max-width', `${Math.min(1600, decoded.naturalWidth)}px`);
-    sceneFrame.dataset.ready = 'true';
-
-    renderBack(scene);
+    requestAnimationFrame(() => sceneFrame.classList.add('ready'));
+    backBtn.hidden = !scene.back;
     renderHotspot(scene);
     setInventory(false);
-    showSceneToast(scene.name);
-
     if (!initial) history.replaceState(null, '', `#${id}`);
   } catch (error) {
-    console.error(`[${BUILD}] scene asset error`, id, error);
-    assetError.hidden = false;
-    assetError.querySelector('strong').textContent = 'Scene image unavailable';
-    assetError.querySelector('span').textContent = 'The scene asset could not be decoded.';
+    console.error(`[${BUILD}]`, id, error);
+    errorBox.textContent = 'Scene failed to load.';
+    errorBox.hidden = false;
   } finally {
-    if (token === transitionToken) document.body.classList.remove('is-loading');
+    if (token === transitionToken) document.body.classList.remove('loading');
   }
 }
 
-backBtn.addEventListener('pointerdown', event => echoAt(event.clientX, event.clientY));
-backBtn.addEventListener('click', event => {
-  event.stopPropagation();
-  const target = SCENES[currentId].back;
-  if (target) void goTo(target);
+backBtn.addEventListener('pointerdown', e => echo(e.clientX, e.clientY));
+backBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const previous = SCENES[current].back;
+  if (previous) void goTo(previous);
 });
 
-inventoryBtn.addEventListener('click', event => {
-  event.stopPropagation();
-  setInventory(!inventoryTray.classList.contains('open'));
-});
-
-hintBtn.addEventListener('click', event => {
-  event.stopPropagation();
+hintBtn.addEventListener('click', e => {
+  e.stopPropagation();
   showHint();
 });
 
-document.addEventListener('pointerdown', event => {
-  const target = event.target;
-  if (target.closest('button') || target.closest('#inventoryTray')) return;
-  echoAt(event.clientX, event.clientY);
+satchelBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  setInventory(!inventory.classList.contains('open'));
+});
+
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('button') || e.target.closest('#inventory')) return;
+  echo(e.clientX, e.clientY);
 }, { passive: true });
 
-document.addEventListener('keydown', event => {
-  const scene = SCENES[currentId];
-  if ((event.key === 'ArrowLeft' || event.key === 'Escape') && scene.back) void goTo(scene.back);
-  if (event.key === 'Enter' && scene.forward) void goTo(scene.forward);
+document.addEventListener('keydown', e => {
+  if ((e.key === 'ArrowLeft' || e.key === 'Escape') && SCENES[current].back) void goTo(SCENES[current].back);
 });
 
 async function boot() {
   try {
     if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map(registration => registration.unregister()));
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
     }
     if ('caches' in window) {
       const keys = await caches.keys();
       await Promise.all(keys.map(key => caches.delete(key)));
     }
-  } catch (error) {
-    console.warn(`[${BUILD}] cache cleanup skipped`, error);
+  } catch (e) {
+    console.warn(`[${BUILD}] cache cleanup skipped`, e);
   }
-
-  const hash = location.hash.replace('#', '');
-  const start = SCENES[hash] ? hash : 'camp';
-  await goTo(start, true);
-
-  for (const [id, scene] of Object.entries(SCENES)) {
-    loadImage(scene.image).catch(error => console.error(`[${BUILD}] preload failed`, id, error));
-  }
+  const hash = location.hash.slice(1);
+  await goTo(SCENES[hash] ? hash : 'camp', true);
+  Object.values(SCENES).forEach(scene => preload(scene.image).catch(() => {}));
 }
 
 void boot();
