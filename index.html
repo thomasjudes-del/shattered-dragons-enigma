@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#0b0f0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SD Enigma" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <title>Shattered Dragons: Enigma</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main id="game" class="game" aria-label="Shattered Dragons: Enigma navigation prototype">
+    <div id="sceneStage" class="scene-stage" aria-live="polite">
+      <img id="sceneImageA" class="scene-image is-visible" alt="" draggable="false" />
+      <img id="sceneImageB" class="scene-image" alt="" draggable="false" />
+      <div class="scene-shade" aria-hidden="true"></div>
+      <div class="grain" aria-hidden="true"></div>
+      <div id="hotspots" class="hotspots"></div>
+      <div id="tapFx" class="tap-fx-layer" aria-hidden="true"></div>
+    </div>
+
+    <header class="hud-top">
+      <div class="brand">
+        <span class="brand-main">SHATTERED DRAGONS</span>
+        <span class="brand-sub">ENIGMA</span>
+      </div>
+      <div class="prototype-tag">PROLOGUE · NAV-01</div>
+    </header>
+
+    <div id="locationLabel" class="location-label"></div>
+
+    <nav id="navControls" class="nav-controls" aria-label="Scene navigation"></nav>
+
+    <section class="hud-bottom" aria-label="Game controls">
+      <button id="satchelBtn" class="hud-btn satchel-btn" type="button" aria-label="Open satchel" aria-expanded="false">
+        <span class="satchel-icon" aria-hidden="true"></span>
+      </button>
+      <div class="inventory-peek" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <button id="hintBtn" class="hud-btn hint-btn" type="button" aria-label="Hint">?</button>
+    </section>
+
+    <aside id="satchel" class="satchel" aria-hidden="true">
+      <div class="satchel-head">
+        <span>SATCHEL</span>
+        <button id="satchelClose" class="satchel-close" type="button" aria-label="Close satchel">×</button>
+      </div>
+      <div class="satchel-grid" aria-label="Inventory slots">
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="slot" type="button" aria-label="Empty inventory slot"></button>
+      </div>
+      <p>Nothing collected yet.</p>
+    </aside>
+
+    <div id="hintToast" class="hint-toast" role="status" aria-live="polite"></div>
+
+    <div id="firstRun" class="first-run">
+      <div class="first-run-card">
+        <div class="first-run-title">SHATTERED DRAGONS</div>
+        <div class="first-run-sub">ENIGMA</div>
+        <p>Navigation prototype</p>
+        <button id="enterBtn" type="button">ENTER</button>
+        <small>Tap or click the scene to move. Directional controls remain available as a fallback.</small>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
