@@ -1,0 +1,15 @@
+{
+  "name": "Shattered Dragons: Enigma",
+  "short_name": "SD Enigma",
+  "description": "Fixed-scene point-and-click puzzle prototype in the Shattered Dragons universe.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "background_color": "#080b09",
+  "theme_color": "#0b0f0d",
+  "orientation": "any",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
