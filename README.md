@@ -1,15 +1,13 @@
 # Shattered Dragons: Enigma
 
-Navigation-first prototype for a fixed-scene point-and-click puzzle game set in the **Shattered Dragons** universe.
+Navigation prototype for a fixed-scene point-and-click puzzle game set in the Shattered Dragons universe.
 
-## NAV-01
+## NAV-04
 
-- five responsive scenes
-- direct scene hotspots plus directional fallback navigation
-- mouse/touch click echo feedback
-- satchel/inventory shell
-- contextual hint control
-- desktop and iPhone-safe responsive layout
-- installable PWA shell with offline caching
-
-This build deliberately contains no real puzzles yet. Its purpose is to validate navigation, visual atmosphere and mobile/desktop ergonomics before the prologue puzzle graph is designed.
+- Five original jungle / buried-facility scene assets.
+- Direct hotspot navigation plus visible forward/back fallback controls.
+- Satchel and contextual hint controls.
+- Tap/click echo feedback.
+- Mobile-first PWA shell with safe-area handling and desktop support.
+- Network-first service worker to prevent stale prototype code during rapid iteration.
+- Built-in `?qa=1` navigation self-test for smoke testing.
