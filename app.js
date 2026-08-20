@@ -1,39 +1,9 @@
 const scenes = [
-  {
-    id: 'camp',
-    src: 'https://images.pexels.com/photos/6271505/pexels-photo-6271505.jpeg?auto=compress&cs=tinysrgb&w=2200',
-    pos: 'center center',
-    hint: 'The survey team left the camp along the forest route.',
-    hotspot: [52, 18, 38, 70]
-  },
-  {
-    id: 'trail',
-    src: 'https://images.unsplash.com/photo-1586957469525-7850e7bef283?auto=format&fit=crop&w=2200&q=88',
-    pos: 'center center',
-    hint: 'The trail continues deeper into the forest.',
-    hotspot: [34, 18, 36, 68]
-  },
-  {
-    id: 'anomaly',
-    src: 'https://images.pexels.com/photos/10595421/pexels-photo-10595421.jpeg?auto=compress&cs=tinysrgb&w=2200',
-    pos: 'center center',
-    hint: 'This structure does not belong to the biodiversity survey.',
-    hotspot: [8, 28, 34, 58]
-  },
-  {
-    id: 'entrance',
-    src: 'https://images.pexels.com/photos/4520377/pexels-photo-4520377.jpeg?auto=compress&cs=tinysrgb&w=2200',
-    pos: 'center center',
-    hint: 'There is a way inside.',
-    hotspot: [34, 30, 34, 50]
-  },
-  {
-    id: 'lab',
-    src: 'https://images.pexels.com/photos/1411391/pexels-photo-1411391.jpeg?auto=compress&cs=tinysrgb&w=2200',
-    pos: 'center center',
-    hint: 'End of the navigation V0.',
-    hotspot: null
-  }
+  { id:'camp', src:'./assets/clean/01-camp.webp?v=130', hint:'The biodiversity survey camp is the last normal place on the route.', hotspot:[18,5,64,82] },
+  { id:'team', src:'./assets/clean/02-team.svg?v=130', hint:'The team found a structure that should not be here.', hotspot:[28,20,48,62] },
+  { id:'map', src:'./assets/clean/03-map.webp?v=130', hint:'One marked route leaves the biodiversity survey area.', hotspot:[16,24,68,58] },
+  { id:'entrance', src:'./assets/clean/04-entrance.webp?v=130', hint:'The entrance is the only obvious way forward.', hotspot:[24,25,54,55] },
+  { id:'lab', src:'./assets/clean/05-lab.webp?v=130', hint:'End of the navigation V0.', hotspot:null }
 ];
 
 const game = document.getElementById('game');
@@ -76,10 +46,7 @@ function setHotspot(scene) {
   const [left, top, width, height] = scene.hotspot;
   hotspot.hidden = false;
   Object.assign(hotspot.style, {
-    left: `${left}%`,
-    top: `${top}%`,
-    width: `${width}%`,
-    height: `${height}%`
+    left: `${left}%`, top: `${top}%`, width: `${width}%`, height: `${height}%`
   });
 }
 
@@ -87,9 +54,14 @@ function render(i) {
   index = i;
   const scene = scenes[i];
   game.dataset.scene = scene.id;
-  image.style.objectPosition = scene.pos;
   back.hidden = i === 0;
   setHotspot(scene);
+}
+
+function closeInventory() {
+  inventory.classList.remove('open');
+  inventory.setAttribute('aria-hidden','true');
+  satchel.setAttribute('aria-expanded','false');
 }
 
 async function go(i) {
@@ -105,10 +77,10 @@ async function go(i) {
       render(i);
       requestAnimationFrame(() => image.classList.remove('fade'));
       busy = false;
-    }, 90);
+    }, 80);
   } catch (err) {
     busy = false;
-    showError(err.message);
+    showError('Scene failed to load.');
   }
 }
 
@@ -119,12 +91,6 @@ function showHint() {
   timer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
-function closeInventory() {
-  inventory.classList.remove('open');
-  inventory.setAttribute('aria-hidden', 'true');
-  satchel.setAttribute('aria-expanded', 'false');
-}
-
 function toggleInventory() {
   const open = !inventory.classList.contains('open');
   inventory.classList.toggle('open', open);
@@ -132,7 +98,7 @@ function toggleInventory() {
   satchel.setAttribute('aria-expanded', String(open));
 }
 
-function echo(x, y) {
+function echo(x,y) {
   const ring = document.createElement('span');
   ring.className = 'echo';
   ring.style.left = `${x}px`;
@@ -144,22 +110,16 @@ function echo(x, y) {
 function showError(message) {
   errorBox.textContent = message;
   errorBox.hidden = false;
-  setTimeout(() => { errorBox.hidden = true; }, 3000);
+  setTimeout(() => { errorBox.hidden = true; }, 2600);
 }
 
-hotspot.addEventListener('click', e => {
-  e.stopPropagation();
-  echo(e.clientX, e.clientY);
-  go(index + 1);
-});
-back.addEventListener('click', () => go(index - 1));
+hotspot.addEventListener('click', e => { e.stopPropagation(); echo(e.clientX,e.clientY); go(index+1); });
+back.addEventListener('click', () => go(index-1));
 hint.addEventListener('click', showHint);
 satchel.addEventListener('click', toggleInventory);
-document.addEventListener('pointerdown', e => {
-  if (!e.target.closest('button')) echo(e.clientX, e.clientY);
-});
+document.addEventListener('pointerdown', e => { if (!e.target.closest('button')) echo(e.clientX,e.clientY); });
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') go(index - 1);
+  if (e.key === 'ArrowLeft') go(index-1);
   if (e.key === 'Escape') closeInventory();
 });
 
@@ -170,11 +130,10 @@ async function boot() {
     render(0);
     game.dataset.ready = 'true';
     loading.hidden = true;
-    Promise.allSettled(scenes.slice(1).map(scene => preload(scene.src)));
+    Promise.allSettled(scenes.slice(1).map(s => preload(s.src)));
   } catch (err) {
     loading.hidden = true;
     showError('Initial scene failed to load.');
   }
 }
-
 boot();

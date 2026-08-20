@@ -7,40 +7,28 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Shattered Dragons: Enigma</title>
-  <link rel="stylesheet" href="./styles.css?v=120">
+  <link rel="stylesheet" href="./styles.css?v=130">
 </head>
 <body>
   <main id="game" class="game" data-scene="camp" data-ready="false">
-    <img id="scene" class="scene" alt="" draggable="false">
-    <div class="vignette" aria-hidden="true"></div>
-
-    <button id="hotspot" class="hotspot" type="button" aria-label="Explore"></button>
-
-    <button id="hint" class="round hint" type="button" aria-label="Hint">
-      <span></span>
-    </button>
-
-    <button id="back" class="round back" type="button" aria-label="Back" hidden>
-      <i></i>
-    </button>
-
-    <div id="inventory" class="inventory" aria-hidden="true">
-      <button aria-label="Empty slot"></button>
-      <button aria-label="Empty slot"></button>
-      <button aria-label="Empty slot"></button>
-      <button aria-label="Empty slot"></button>
-      <button aria-label="Empty slot"></button>
-    </div>
-
-    <button id="satchel" class="satchel" type="button" aria-label="Open inventory" aria-expanded="false">
-      <img src="https://w7.pngwing.com/pngs/722/321/png-transparent-messenger-bags-leather-handbag-tasche-bag-brown-backpack-leather.png" alt="" draggable="false">
-    </button>
-
-    <div id="toast" class="toast" role="status"></div>
-    <div id="errorBox" class="error-box" hidden role="alert"></div>
-    <div id="echoes" class="echoes" aria-hidden="true"></div>
-    <div id="loading" class="loading">Loading expedition…</div>
+    <section class="stage">
+      <img id="scene" class="scene" alt="" draggable="false">
+      <div class="vignette" aria-hidden="true"></div>
+      <button id="hotspot" class="hotspot" type="button" aria-label="Explore"></button>
+      <button id="hint" class="round hint" type="button" aria-label="Hint"><span></span></button>
+      <button id="back" class="round back" type="button" aria-label="Back" hidden><i></i></button>
+      <div id="inventory" class="inventory" aria-hidden="true">
+        <button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button>
+      </div>
+      <button id="satchel" class="satchel" type="button" aria-label="Open inventory" aria-expanded="false">
+        <img src="./assets/clean/satchel.webp?v=130" alt="" draggable="false">
+      </button>
+      <div id="toast" class="toast" role="status"></div>
+      <div id="errorBox" class="error-box" hidden role="alert"></div>
+      <div id="echoes" class="echoes" aria-hidden="true"></div>
+      <div id="loading" class="loading">Loading expedition…</div>
+    </section>
   </main>
-  <script src="./app.js?v=120" defer></script>
+  <script src="./app.js?v=130" defer></script>
 </body>
 </html>
