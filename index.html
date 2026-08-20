@@ -6,44 +6,23 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SD Enigma">
-  <meta name="build" content="v10.0">
-  <link rel="stylesheet" href="./styles.css?v=100">
   <title>Shattered Dragons: Enigma</title>
+  <link rel="stylesheet" href="./styles.css?v=110">
 </head>
 <body>
-  <main id="game" class="game" data-scene="camp" data-assets-ready="false" data-qa="pending">
-    <section id="stage" class="stage" aria-label="Game scene">
-      <canvas id="sceneCanvas" class="scene-canvas" width="1600" height="900" aria-label="Current scene"></canvas>
-      <div id="hotspotLayer" class="hotspot-layer"></div>
-      <div class="vignette" aria-hidden="true"></div>
-
-      <button id="hintBtn" class="round-button hint-button" type="button" aria-label="Hint">
-        <span class="magnifier" aria-hidden="true"></span>
-      </button>
-
-      <button id="backBtn" class="round-button back-button" type="button" aria-label="Go back" hidden>
-        <span class="back-chevron" aria-hidden="true"></span>
-      </button>
-
-      <aside id="inventory" class="inventory" aria-hidden="true" aria-label="Inventory">
-        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
-        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
-        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
-        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
-        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
-      </aside>
-
-      <button id="satchelBtn" class="satchel-button" type="button" aria-label="Open satchel" aria-expanded="false">
-        <img id="satchelImage" alt="" draggable="false">
-      </button>
-
-      <div id="hintToast" class="hint-toast" role="status" aria-live="polite"></div>
-      <div id="errorBox" class="error-box" hidden role="alert"></div>
-      <div id="echoLayer" class="echo-layer" aria-hidden="true"></div>
-      <div id="loading" class="loading">Loading expedition…</div>
-    </section>
+  <main id="game" class="game" data-scene="camp">
+    <img id="scene" class="scene" alt="" draggable="false">
+    <div class="vignette" aria-hidden="true"></div>
+    <button id="hotspot" class="hotspot" type="button" aria-label="Explore"></button>
+    <button id="hint" class="round hint" type="button" aria-label="Hint"><span></span></button>
+    <button id="back" class="round back" type="button" aria-label="Back" hidden><i></i></button>
+    <div id="inventory" class="inventory" aria-hidden="true">
+      <button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button>
+    </div>
+    <button id="satchel" class="satchel" type="button" aria-label="Open inventory" aria-expanded="false"><span class="bag-shape" aria-hidden="true"></span></button>
+    <div id="toast" class="toast" role="status"></div>
+    <div id="echoes" class="echoes" aria-hidden="true"></div>
   </main>
-  <script type="module" src="./app.js?v=100"></script>
+  <script src="./app.js?v=110" defer></script>
 </body>
 </html>
