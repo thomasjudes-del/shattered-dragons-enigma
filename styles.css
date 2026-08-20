@@ -1,83 +1,145 @@
 :root {
   color-scheme: dark;
-  --line: rgba(223,210,164,.34);
-  --ivory: rgba(248,245,232,.9);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #020302;
 }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#020302; }
-body { overscroll-behavior:none; touch-action:manipulation; }
-button { font:inherit; }
-button:focus-visible { outline:2px solid #d0b66f; outline-offset:3px; }
-.game { position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; overflow:hidden; background:#020302; user-select:none; }
 
-/* Desktop preserves the artwork at its native cinematic ratio instead of stretching it. */
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #020302; }
+button { font: inherit; }
+
+.game {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #020302;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
 .scene-frame {
-  position:absolute;
-  z-index:1;
-  left:50%;
-  top:50%;
-  width:min(100vw, 1200px, calc(100dvh * 1.6));
-  aspect-ratio:1.6 / 1;
-  max-height:100dvh;
-  transform:translate(-50%,-50%);
-  overflow:hidden;
-  background:#040604;
-  box-shadow:0 0 80px rgba(0,0,0,.5);
-}
-.scene-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%; opacity:0; transition:opacity .16s ease; image-rendering:auto; }
-.scene-frame.ready .scene-image { opacity:1; }
-.scene-vignette { position:absolute; inset:0; pointer-events:none; background:linear-gradient(to bottom,rgba(0,0,0,.08),transparent 16%,transparent 74%,rgba(0,0,0,.24)),radial-gradient(circle at 50% 48%,transparent 58%,rgba(0,0,0,.16) 100%); }
-.hotspot-layer { position:absolute; inset:0; z-index:5; }
-.scene-hotspot { position:absolute; border:0; background:transparent; padding:0; cursor:pointer; }
-.scene-hotspot::after { content:""; position:absolute; left:50%; top:50%; width:64px; height:64px; transform:translate(-50%,-50%) scale(.65); border:1px solid transparent; border-radius:50%; transition:transform .15s ease,border-color .15s ease,background .15s ease; }
-@media (hover:hover) { .scene-hotspot:hover::after { transform:translate(-50%,-50%) scale(1); border-color:rgba(228,212,159,.25); background:rgba(228,212,159,.025); } }
-
-.hud-button { position:absolute; z-index:20; width:62px; height:62px; border-radius:50%; border:1px solid var(--line); background:rgba(6,8,7,.43); backdrop-filter:blur(11px); color:var(--ivory); box-shadow:0 12px 30px rgba(0,0,0,.28); cursor:pointer; }
-.hud-button:active { transform:scale(.94); }
-.hint-button { left:calc(env(safe-area-inset-left) + 18px); top:calc(env(safe-area-inset-top) + 18px); }
-.magnifier { position:absolute; left:18px; top:16px; width:23px; height:23px; border:2px solid currentColor; border-radius:50%; }
-.magnifier::after { content:""; position:absolute; right:-10px; bottom:-6px; width:14px; height:2px; border-radius:2px; background:currentColor; transform:rotate(45deg); transform-origin:left center; }
-.back-button { left:calc(env(safe-area-inset-left) + 18px); bottom:calc(env(safe-area-inset-bottom) + 22px); }
-.back-chevron { position:absolute; width:20px; height:20px; left:23px; top:20px; border-left:3px solid currentColor; border-bottom:3px solid currentColor; transform:rotate(45deg); }
-
-/* The satchel itself is the control. No generic rounded-square web icon around it. */
-.satchel-button { position:absolute; z-index:22; right:calc(env(safe-area-inset-right) + 10px); bottom:calc(env(safe-area-inset-bottom) + 4px); width:105px; height:96px; padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 10px 14px rgba(0,0,0,.48)); }
-.satchel-button svg { width:100%; height:100%; display:block; overflow:visible; }
-.satchel-button:active { transform:scale(.96); }
-
-.inventory { position:absolute; z-index:21; right:calc(env(safe-area-inset-right) + 94px); bottom:calc(env(safe-area-inset-bottom) + 17px); display:flex; gap:7px; padding:8px 14px 8px 8px; border:1px solid rgba(223,210,164,.28); border-right:0; border-radius:12px 0 0 12px; background:rgba(5,8,6,.78); backdrop-filter:blur(14px); box-shadow:0 15px 38px rgba(0,0,0,.38); opacity:0; transform:translateX(24px); pointer-events:none; transition:opacity .16s ease,transform .16s ease; }
-.inventory.open { opacity:1; transform:translateX(0); pointer-events:auto; }
-.inventory-slot { width:58px; height:58px; flex:0 0 58px; border:1px solid rgba(223,210,164,.22); border-radius:7px; background:rgba(255,255,255,.018); }
-
-.hint-toast { position:absolute; z-index:30; left:50%; bottom:calc(env(safe-area-inset-bottom) + 105px); width:min(510px,calc(100vw - 34px)); transform:translate(-50%,8px); padding:12px 15px; border:1px solid rgba(223,210,164,.22); border-radius:10px; background:rgba(5,8,6,.82); backdrop-filter:blur(14px); color:rgba(247,244,231,.8); font-size:12px; line-height:1.4; text-align:center; opacity:0; pointer-events:none; transition:opacity .17s ease,transform .17s ease; }
-.hint-toast.show { opacity:1; transform:translate(-50%,0); }
-.error-box { position:absolute; z-index:50; left:50%; top:50%; transform:translate(-50%,-50%); padding:14px 17px; border:1px solid rgba(194,91,68,.5); border-radius:10px; background:rgba(18,7,5,.94); color:#f1dcd5; font-size:12px; }
-.echo-layer { position:absolute; inset:0; z-index:60; pointer-events:none; }
-.tap-echo { position:fixed; width:14px; height:14px; border:1px solid rgba(218,192,125,.78); border-radius:50%; transform:translate(-50%,-50%) scale(.22); opacity:.9; animation:tapEcho .52s ease-out forwards; box-shadow:0 0 15px rgba(218,192,125,.16); }
-@keyframes tapEcho { to { transform:translate(-50%,-50%) scale(3.7); opacity:0; } }
-body.loading .scene-hotspot, body.loading .back-button { pointer-events:none; }
-
-/* Phone uses the artwork full-bleed. No extra title/header layer. */
-@media (max-width:640px) {
-  .scene-frame { inset:0; left:0; top:0; width:100vw; height:100dvh; max-height:none; aspect-ratio:auto; transform:none; }
-  .scene-image { object-fit:cover; }
-  .hud-button { width:58px; height:58px; }
-  .hint-button { left:calc(env(safe-area-inset-left) + 18px); top:calc(env(safe-area-inset-top) + 18px); }
-  .back-button { left:calc(env(safe-area-inset-left) + 18px); bottom:calc(env(safe-area-inset-bottom) + 18px); }
-  .satchel-button { width:96px; height:88px; right:calc(env(safe-area-inset-right) + 4px); bottom:calc(env(safe-area-inset-bottom) + 0px); }
-  .inventory { left:calc(env(safe-area-inset-left) + 28px); right:calc(env(safe-area-inset-right) + 86px); bottom:calc(env(safe-area-inset-bottom) + 13px); overflow-x:auto; border-right:0; padding-right:14px; }
-  .inventory-slot { width:52px; height:52px; flex-basis:52px; }
-  .hint-toast { bottom:calc(env(safe-area-inset-bottom) + 103px); }
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #020302;
 }
 
-@media (orientation:landscape) and (max-height:520px) {
-  .scene-frame { width:min(100vw,calc(100dvh * 1.6)); height:100dvh; aspect-ratio:1.6/1; left:50%; top:50%; transform:translate(-50%,-50%); }
-  .hint-button { width:50px; height:50px; top:calc(env(safe-area-inset-top) + 8px); left:calc(env(safe-area-inset-left) + 10px); }
-  .magnifier { left:14px; top:12px; width:20px; height:20px; }
-  .back-button { width:50px; height:50px; left:calc(env(safe-area-inset-left) + 10px); bottom:calc(env(safe-area-inset-bottom) + 8px); }
-  .back-chevron { width:17px; height:17px; left:19px; top:16px; }
-  .satchel-button { width:78px; height:72px; bottom:calc(env(safe-area-inset-bottom) - 2px); }
-  .inventory { bottom:calc(env(safe-area-inset-bottom) + 8px); right:calc(env(safe-area-inset-right) + 68px); }
-  .inventory-slot { width:45px; height:45px; flex-basis:45px; }
+.scene-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  image-rendering: auto;
+  transform: translateZ(0);
+  opacity: 1;
+  transition: opacity 160ms ease;
+}
+
+.scene-image.changing { opacity: .25; }
+.scene-vignette { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 90px rgba(0,0,0,.35); }
+.hotspot-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.advance-hotspot { position: absolute; border: 0; padding: 0; background: transparent; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+.advance-hotspot:focus-visible { outline: 1px solid rgba(226,211,171,.55); outline-offset: -6px; }
+
+.hud-button {
+  position: absolute;
+  z-index: 8;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border: 1px solid rgba(205,185,139,.38);
+  background: rgba(8,10,8,.62);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  color: #e9e5dc;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hint-button { top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); }
+.back-button { bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px)); left: max(18px, env(safe-area-inset-left)); }
+.magnifier { position: absolute; width: 27px; height: 27px; border: 3px solid currentColor; border-radius: 50%; left: 17px; top: 14px; }
+.magnifier::after { content: ""; position: absolute; width: 21px; height: 3px; background: currentColor; transform: rotate(45deg); transform-origin: left center; left: 22px; top: 23px; border-radius: 2px; }
+.back-chevron { position: absolute; width: 24px; height: 24px; border-left: 4px solid currentColor; border-bottom: 4px solid currentColor; transform: rotate(45deg); left: 23px; top: 19px; }
+
+.satchel-button {
+  position: absolute;
+  z-index: 10;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px));
+  width: 82px;
+  height: 76px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,.55));
+  -webkit-tap-highlight-color: transparent;
+}
+.satchel-button svg { width: 100%; height: 100%; overflow: visible; }
+
+.inventory {
+  position: absolute;
+  z-index: 9;
+  right: max(104px, calc(env(safe-area-inset-right) + 104px));
+  bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px));
+  display: grid;
+  grid-template-columns: repeat(5, minmax(54px, 68px));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(183,153,98,.34);
+  border-radius: 16px;
+  background: rgba(5,7,5,.86);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateX(14px) scale(.98);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.inventory.open { opacity: 1; transform: none; pointer-events: auto; }
+.inventory-slot { aspect-ratio: 1; min-width: 54px; border: 1px solid rgba(197,174,127,.32); border-radius: 10px; background: rgba(11,14,11,.72); }
+
+.hint-toast, .error-box {
+  position: absolute;
+  z-index: 15;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(188,151,95,.42);
+  background: rgba(8,9,7,.9);
+  color: #eee9df;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  letter-spacing: .02em;
+  text-align: center;
+  max-width: min(88vw, 480px);
+}
+.hint-toast { bottom: 100px; opacity: 0; pointer-events: none; transition: opacity 150ms ease; }
+.hint-toast.show { opacity: 1; }
+.error-box { top: 50%; transform: translate(-50%, -50%); border-color: rgba(179,81,47,.7); }
+
+.echo-layer { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.tap-echo { position: absolute; width: 12px; height: 12px; margin: -6px; border: 1px solid rgba(239,225,187,.75); border-radius: 50%; animation: echo .45s ease-out forwards; }
+@keyframes echo { to { transform: scale(4.5); opacity: 0; } }
+
+@media (min-width: 900px) {
+  .scene-image { width: min(100vw, 1280px); height: min(100vh, 800px); object-fit: cover; }
+  .scene-vignette { box-shadow: inset 0 0 120px rgba(0,0,0,.25); }
+}
+
+@media (max-width: 700px) {
+  .hud-button { width: 58px; height: 58px; }
+  .hint-button { top: max(16px, env(safe-area-inset-top)); left: 14px; }
+  .back-button { left: 16px; bottom: max(20px, calc(env(safe-area-inset-bottom) + 12px)); }
+  .magnifier { transform: scale(.88); transform-origin: 15px 15px; }
+  .back-chevron { transform: rotate(45deg) scale(.88); transform-origin: center; }
+  .satchel-button { width: 72px; height: 68px; right: 14px; bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px)); }
+  .inventory { left: 24px; right: 96px; bottom: max(18px, calc(env(safe-area-inset-bottom) + 12px)); grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; }
+  .inventory-slot { min-width: 0; border-radius: 8px; }
+  .hint-toast { bottom: 98px; }
 }
