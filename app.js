@@ -1,9 +1,9 @@
 const scenes = [
-  { id:'camp', src:'./assets/clean/01-camp.webp?v=130', hint:'The biodiversity survey camp is the last normal place on the route.', hotspot:[18,5,64,82] },
-  { id:'team', src:'./assets/clean/02-team.svg?v=130', hint:'The team found a structure that should not be here.', hotspot:[28,20,48,62] },
-  { id:'map', src:'./assets/clean/03-map.webp?v=130', hint:'One marked route leaves the biodiversity survey area.', hotspot:[16,24,68,58] },
-  { id:'entrance', src:'./assets/clean/04-entrance.webp?v=130', hint:'The entrance is the only obvious way forward.', hotspot:[24,25,54,55] },
-  { id:'lab', src:'./assets/clean/05-lab.webp?v=130', hint:'End of the navigation V0.', hotspot:null }
+  { id:'camp', src:'./assets/v0/camp.svg?v=140', hint:'The biodiversity survey camp is the last normal place on the route.', hotspot:[10,8,80,78] },
+  { id:'team', src:'./assets/v0/team.svg?v=140', hint:'The team found a structure that should not be here.', hotspot:[18,16,64,68] },
+  { id:'map', src:'./assets/v0/map.svg?v=140', hint:'One marked route leaves the biodiversity survey area.', hotspot:[10,14,80,72] },
+  { id:'entrance', src:'./assets/v0/entrance.svg?v=140', hint:'The entrance is the only obvious way forward.', hotspot:[18,18,64,66] },
+  { id:'lab', src:'./assets/v0/lab.svg?v=140', hint:'End of the navigation V0.', hotspot:null }
 ];
 
 const game = document.getElementById('game');
