@@ -52,11 +52,11 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 @keyframes echo { from { transform: scale(.25); opacity: .85; } to { transform: scale(5); opacity: 0; } }
 .is-loading .scene-image { opacity: .3; }
 @media (orientation: landscape) {
-  .scene-frame { max-width: min(var(--scene-max-width), calc(100dvh * 16 / 9)); }
+  .scene-frame { inset: auto; top: 50%; left: 50%; width: min(100vw, var(--scene-max-width), calc(100dvh * 16 / 9)); height: auto; aspect-ratio: 16 / 9; transform: translate(-50%,-50%); margin: 0; }
   .scene-image { object-fit: cover; }
 }
 @media (orientation: portrait) {
-  .scene-frame { width: 100vw; max-width: none; height: 100dvh; }
+  .scene-frame { inset: 0; width: 100vw; max-width: none; height: 100dvh; transform: none; margin: auto; }
   .scene-image { object-fit: cover; }
   .hud-btn { width: 54px; height: 54px; }
   .back-button { width: 62px; height: 62px; bottom: max(24px, calc(env(safe-area-inset-bottom) + 18px)); }
