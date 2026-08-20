@@ -1,30 +1,180 @@
-const scenes=[
-{id:'camp',src:'./assets/scenes/camp.avif?v=110',hint:'The biodiversity survey route continues beyond the camp.',hotspot:[48,24,42,62]},
-{id:'trail',src:'./assets/scenes/trail.avif?v=110',hint:'The survey route continues deeper into the forest.',hotspot:[42,18,48,70]},
-{id:'anomaly',src:'./assets/scenes/anomaly.avif?v=110',hint:'Something here does not belong to the expedition.',hotspot:[35,24,40,56]},
-{id:'entrance',src:'./assets/scenes/entrance.avif?v=110',hint:'The buried structure is the only route forward.',hotspot:[34,24,38,58]},
-{id:'lab',src:'./assets/scenes/lab.avif?v=110',hint:'End of the navigation V0.',hotspot:null}
+const scenes = [
+  {
+    id: 'camp',
+    src: 'https://images.pexels.com/photos/6271505/pexels-photo-6271505.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos: 'center center',
+    hint: 'The survey team left the camp along the forest route.',
+    hotspot: [52, 18, 38, 70]
+  },
+  {
+    id: 'trail',
+    src: 'https://images.unsplash.com/photo-1586957469525-7850e7bef283?auto=format&fit=crop&w=2200&q=88',
+    pos: 'center center',
+    hint: 'The trail continues deeper into the forest.',
+    hotspot: [34, 18, 36, 68]
+  },
+  {
+    id: 'anomaly',
+    src: 'https://images.pexels.com/photos/10595421/pexels-photo-10595421.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos: 'center center',
+    hint: 'This structure does not belong to the biodiversity survey.',
+    hotspot: [8, 28, 34, 58]
+  },
+  {
+    id: 'entrance',
+    src: 'https://images.pexels.com/photos/4520377/pexels-photo-4520377.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos: 'center center',
+    hint: 'There is a way inside.',
+    hotspot: [34, 30, 34, 50]
+  },
+  {
+    id: 'lab',
+    src: 'https://images.pexels.com/photos/1411391/pexels-photo-1411391.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos: 'center center',
+    hint: 'End of the navigation V0.',
+    hotspot: null
+  }
 ];
-const game=document.getElementById('game');
-const image=document.getElementById('scene');
-const hotspot=document.getElementById('hotspot');
-const back=document.getElementById('back');
-const hint=document.getElementById('hint');
-const satchel=document.getElementById('satchel');
-const inventory=document.getElementById('inventory');
-const toast=document.getElementById('toast');
-const echoes=document.getElementById('echoes');
-let index=0,busy=false,timer;
-function setHotspot(scene){if(!scene.hotspot||index===scenes.length-1){hotspot.hidden=true;return;}const [l,t,w,h]=scene.hotspot;hotspot.hidden=false;Object.assign(hotspot.style,{left:l+'%',top:t+'%',width:w+'%',height:h+'%'});}
-function render(i){index=i;const scene=scenes[i];game.dataset.scene=scene.id;back.hidden=i===0;setHotspot(scene);}
-function go(i){if(busy||i<0||i>=scenes.length)return;busy=true;inventory.classList.remove('open');satchel.setAttribute('aria-expanded','false');image.classList.add('fade');const next=scenes[i];const preload=new Image();preload.onload=()=>{image.src=next.src;render(i);requestAnimationFrame(()=>image.classList.remove('fade'));busy=false;};preload.onerror=()=>{image.classList.remove('fade');busy=false;};preload.src=next.src;}
-function showHint(){clearTimeout(timer);toast.textContent=scenes[index].hint;toast.classList.add('show');timer=setTimeout(()=>toast.classList.remove('show'),2200);}
-function echo(x,y){const e=document.createElement('span');e.className='echo';e.style.left=x+'px';e.style.top=y+'px';echoes.appendChild(e);setTimeout(()=>e.remove(),460);}
-hotspot.addEventListener('click',e=>{echo(e.clientX,e.clientY);go(index+1);});
-back.addEventListener('click',()=>go(index-1));
-hint.addEventListener('click',showHint);
-satchel.addEventListener('click',()=>{const open=!inventory.classList.contains('open');inventory.classList.toggle('open',open);inventory.setAttribute('aria-hidden',String(!open));satchel.setAttribute('aria-expanded',String(open));});
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('button'))echo(e.clientX,e.clientY);});
-document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')go(index-1);if(e.key==='Escape'){inventory.classList.remove('open');satchel.setAttribute('aria-expanded','false');}});
-image.addEventListener('load',()=>{game.dataset.ready='true';});
-image.src=scenes[0].src;render(0);
+
+const game = document.getElementById('game');
+const image = document.getElementById('scene');
+const hotspot = document.getElementById('hotspot');
+const back = document.getElementById('back');
+const hint = document.getElementById('hint');
+const satchel = document.getElementById('satchel');
+const inventory = document.getElementById('inventory');
+const toast = document.getElementById('toast');
+const echoes = document.getElementById('echoes');
+const loading = document.getElementById('loading');
+const errorBox = document.getElementById('errorBox');
+
+let index = 0;
+let busy = false;
+let timer;
+const cache = new Map();
+
+function preload(src) {
+  return new Promise((resolve, reject) => {
+    if (cache.has(src)) return resolve(cache.get(src));
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) return reject(new Error('Image has zero dimensions'));
+      cache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.src = src;
+  });
+}
+
+function setHotspot(scene) {
+  if (!scene.hotspot || index === scenes.length - 1) {
+    hotspot.hidden = true;
+    return;
+  }
+  const [left, top, width, height] = scene.hotspot;
+  hotspot.hidden = false;
+  Object.assign(hotspot.style, {
+    left: `${left}%`,
+    top: `${top}%`,
+    width: `${width}%`,
+    height: `${height}%`
+  });
+}
+
+function render(i) {
+  index = i;
+  const scene = scenes[i];
+  game.dataset.scene = scene.id;
+  image.style.objectPosition = scene.pos;
+  back.hidden = i === 0;
+  setHotspot(scene);
+}
+
+async function go(i) {
+  if (busy || i < 0 || i >= scenes.length) return;
+  busy = true;
+  closeInventory();
+  const next = scenes[i];
+  try {
+    await preload(next.src);
+    image.classList.add('fade');
+    setTimeout(() => {
+      image.src = next.src;
+      render(i);
+      requestAnimationFrame(() => image.classList.remove('fade'));
+      busy = false;
+    }, 90);
+  } catch (err) {
+    busy = false;
+    showError(err.message);
+  }
+}
+
+function showHint() {
+  clearTimeout(timer);
+  toast.textContent = scenes[index].hint;
+  toast.classList.add('show');
+  timer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function closeInventory() {
+  inventory.classList.remove('open');
+  inventory.setAttribute('aria-hidden', 'true');
+  satchel.setAttribute('aria-expanded', 'false');
+}
+
+function toggleInventory() {
+  const open = !inventory.classList.contains('open');
+  inventory.classList.toggle('open', open);
+  inventory.setAttribute('aria-hidden', String(!open));
+  satchel.setAttribute('aria-expanded', String(open));
+}
+
+function echo(x, y) {
+  const ring = document.createElement('span');
+  ring.className = 'echo';
+  ring.style.left = `${x}px`;
+  ring.style.top = `${y}px`;
+  echoes.appendChild(ring);
+  setTimeout(() => ring.remove(), 460);
+}
+
+function showError(message) {
+  errorBox.textContent = message;
+  errorBox.hidden = false;
+  setTimeout(() => { errorBox.hidden = true; }, 3000);
+}
+
+hotspot.addEventListener('click', e => {
+  e.stopPropagation();
+  echo(e.clientX, e.clientY);
+  go(index + 1);
+});
+back.addEventListener('click', () => go(index - 1));
+hint.addEventListener('click', showHint);
+satchel.addEventListener('click', toggleInventory);
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('button')) echo(e.clientX, e.clientY);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') go(index - 1);
+  if (e.key === 'Escape') closeInventory();
+});
+
+async function boot() {
+  try {
+    await preload(scenes[0].src);
+    image.src = scenes[0].src;
+    render(0);
+    game.dataset.ready = 'true';
+    loading.hidden = true;
+    Promise.allSettled(scenes.slice(1).map(scene => preload(scene.src)));
+  } catch (err) {
+    loading.hidden = true;
+    showError('Initial scene failed to load.');
+  }
+}
+
+boot();
