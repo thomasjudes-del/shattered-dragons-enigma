@@ -4,7 +4,20 @@ import anomalyImage from './assets/anomaly.js';
 import entranceImage from './assets/entrance.js';
 import labImage from './assets/lab.js';
 
-const BUILD = 'v6.1';
+const BUILD = 'v6.2';
+
+function normalizeImageSource(value) {
+  const src = String(value || '').trim();
+  if (!src) throw new Error('Empty image source');
+  if (src.startsWith('data:image/')) return src;
+  if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('./') || src.startsWith('../') || src.startsWith('/')) return src;
+  // The repository image modules currently export raw WebP base64 strings.
+  // Convert them into valid browser image URLs in one central place.
+  if (/^[A-Za-z0-9+/=\s]+$/.test(src) && src.length > 128) {
+    return `data:image/webp;base64,${src.replace(/\s+/g, '')}`;
+  }
+  throw new Error('Unsupported image source format');
+}
 
 const SCENES = {
   camp: {
@@ -63,7 +76,8 @@ let transitionToken = 0;
 let toastTimer = null;
 let hintTimer = null;
 
-function loadImage(src) {
+function loadImage(value) {
+  const src = normalizeImageSource(value);
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = 'async';
@@ -72,7 +86,7 @@ function loadImage(src) {
         reject(new Error('Image has no intrinsic dimensions'));
         return;
       }
-      resolve(img);
+      resolve({ img, src });
     };
     img.onerror = () => reject(new Error('Image failed to decode'));
     img.src = src;
@@ -157,12 +171,12 @@ async function goTo(id, initial = false) {
 
     currentId = id;
     document.getElementById('game').dataset.scene = id;
-    sceneImage.src = scene.image;
+    sceneImage.src = decoded.src;
     sceneImage.alt = '';
-    backdropImage.src = scene.image;
+    backdropImage.src = decoded.src;
     backdropImage.alt = '';
 
-    const safeWidth = Math.max(720, Math.min(1180, decoded.naturalWidth));
+    const safeWidth = Math.max(720, Math.min(1180, decoded.img.naturalWidth));
     sceneFrame.style.setProperty('--scene-max-width', `${safeWidth}px`);
     sceneFrame.dataset.ready = 'true';
 
@@ -174,7 +188,7 @@ async function goTo(id, initial = false) {
     console.error(`[${BUILD}] scene asset error`, id, error);
     assetError.hidden = false;
     assetError.querySelector('strong').textContent = 'Scene image unavailable';
-    assetError.querySelector('span').textContent = 'Reload the page. Navigation has been stopped rather than showing a blank scene.';
+    assetError.querySelector('span').textContent = 'This build failed its image decode step.';
   } finally {
     if (token === transitionToken) document.body.classList.remove('is-loading');
   }
