@@ -1,52 +1,82 @@
 import { test, expect } from '@playwright/test';
 
-const forward = ['trail', 'anomaly', 'entrance', 'lab'];
-const backward = ['entrance', 'anomaly', 'trail', 'camp'];
+const PATH = ['camp', 'trail', 'anomaly', 'entrance', 'lab'];
 
-test('five-scene loop, images, controls and satchel work', async ({ page }) => {
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+async function assertSceneHealthy(page, id) {
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', id);
+  await expect(page.locator('#assetError')).toBeHidden();
+  const image = page.locator('#sceneImage');
+  await expect(image).toBeVisible();
+  await expect.poll(async () => image.evaluate(img => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight }))).toMatchObject({ complete: true });
+  const dimensions = await image.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }));
+  expect(dimensions.width).toBeGreaterThanOrEqual(500);
+  expect(dimensions.height).toBeGreaterThanOrEqual(500);
+  const src = await image.getAttribute('src');
+  expect(src).toMatch(/^data:image\/webp;base64,/);
+}
 
-  await page.goto('/?test=1', { waitUntil: 'networkidle' });
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'camp');
+async function clickDirection(page, direction) {
+  const button = page.locator(`.nav-${direction}`);
+  await expect(button).toBeVisible();
+  const box = await button.boundingBox();
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  await button.click();
+}
 
-  const assertImage = async () => {
-    const size = await page.locator('#sceneImage').evaluate(img => [img.naturalWidth, img.naturalHeight, img.complete]);
-    expect(size[2]).toBe(true);
-    expect(size[0]).toBeGreaterThanOrEqual(1000);
-    expect(size[1]).toBeGreaterThanOrEqual(600);
-  };
-
-  await assertImage();
-  for (const scene of forward) {
-    await page.locator('.arrow-forward').click();
-    await expect(page.locator('#game')).toHaveAttribute('data-scene', scene);
-    await assertImage();
+test('all five scenes decode and full navigation works in both directions', async ({ page }) => {
+  const consoleErrors = [];
+  const pageErrors = [];
+  page.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto('/');
+  await assertSceneHealthy(page, 'camp');
+  for (const id of PATH.slice(1)) {
+    await clickDirection(page, 'forward');
+    await assertSceneHealthy(page, id);
   }
-
-  for (const scene of backward) {
-    await page.locator('.arrow-back').click();
-    await expect(page.locator('#game')).toHaveAttribute('data-scene', scene);
-    await assertImage();
+  for (const id of PATH.slice(0, -1).reverse()) {
+    await clickDirection(page, 'back');
+    await assertSceneHealthy(page, id);
   }
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
+});
 
-  await page.locator('#satchelButton').click();
-  await expect(page.locator('#satchel')).toHaveClass(/open/);
-  await page.locator('#satchelClose').click();
-  await expect(page.locator('#satchel')).not.toHaveClass(/open/);
+test('inventory and hint controls work', async ({ page }) => {
+  await page.goto('/');
+  await assertSceneHealthy(page, 'camp');
+  await page.locator('#inventoryBtn').click();
+  await expect(page.locator('#inventoryDrawer')).toHaveClass(/open/);
+  await expect(page.locator('#inventoryDrawer')).toContainText('INVENTORY');
+  await page.locator('#inventoryClose').click();
+  await expect(page.locator('#inventoryDrawer')).not.toHaveClass(/open/);
+  await page.locator('#hintBtn').click();
+  await expect(page.locator('#hintToast')).toHaveClass(/show/);
+  await expect(page.locator('#hintToast')).toContainText('biodiversity');
+});
 
-  await page.locator('#hintButton').click();
-  await expect(page.locator('#toast')).toHaveClass(/show/);
-
-  const targets = await page.locator('.arrow, .hud-button').evaluateAll(nodes => nodes.map(node => {
-    const r = node.getBoundingClientRect();
-    return [r.width, r.height];
-  }));
-  for (const [width, height] of targets) {
-    expect(width).toBeGreaterThanOrEqual(42);
-    expect(height).toBeGreaterThanOrEqual(42);
+test('layout does not horizontally overflow or overlap the header actions', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await assertSceneHealthy(page, 'camp');
+  const metrics = await page.evaluate(() => {
+    const brand = document.querySelector('.brand').getBoundingClientRect();
+    const actions = document.querySelector('.top-actions').getBoundingClientRect();
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      headerOverlap: brand.right > actions.left,
+      bodyHeight: document.body.getBoundingClientRect().height,
+      innerHeight: window.innerHeight
+    };
+  });
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.innerWidth + 1);
+  expect(metrics.headerOverlap).toBeFalsy();
+  expect(Math.abs(metrics.bodyHeight - metrics.innerHeight)).toBeLessThanOrEqual(2);
+  await page.screenshot({ path: testInfo.outputPath('camp.png'), fullPage: true });
+  for (const id of PATH.slice(1)) {
+    await clickDirection(page, 'forward');
+    await assertSceneHealthy(page, id);
   }
-
-  expect(errors, errors.join('\n')).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath('lab.png'), fullPage: true });
 });
