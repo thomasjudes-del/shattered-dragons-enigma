@@ -3,48 +3,75 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#07100a">
+  <meta name="theme-color" content="#060806">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SD Enigma">
-  <link rel="manifest" href="./manifest.webmanifest?v=4">
+  <meta name="build" content="v6.1">
+  <link rel="manifest" href="./manifest.webmanifest?v=61">
   <title>Shattered Dragons: Enigma</title>
-  <link rel="stylesheet" href="./styles.css?v=4">
+  <link rel="stylesheet" href="./styles.css?v=61">
 </head>
 <body>
   <main id="game" class="game" data-scene="camp">
-    <div class="backdrop" aria-hidden="true"><img id="backdropImage" alt=""></div>
-    <section id="scene" class="scene" aria-label="Game scene">
+    <div class="backdrop" aria-hidden="true">
+      <img id="backdropImage" alt="">
+    </div>
+
+    <section class="scene-frame" aria-label="Game scene">
       <img id="sceneImage" class="scene-image" alt="" draggable="false">
-      <div class="scene-vignette"></div>
-      <div id="hotspots" class="hotspots"></div>
-      <div id="echoLayer" class="echo-layer" aria-hidden="true"></div>
+      <div class="scene-vignette" aria-hidden="true"></div>
+      <div id="hotspotLayer" class="hotspot-layer"></div>
     </section>
 
     <header class="topbar">
-      <div class="brand"><strong>SHATTERED DRAGONS</strong><span>ENIGMA · PROLOGUE</span></div>
-      <div id="sceneLabel" class="scene-label">CAMP DE BASE</div>
+      <div class="brand" aria-label="Shattered Dragons Enigma Prologue">
+        <strong>SHATTERED DRAGONS</strong>
+        <span>ENIGMA · PROLOGUE</span>
+      </div>
+      <div class="top-actions">
+        <button id="inventoryBtn" class="icon-btn inventory-button" type="button" aria-label="Open inventory" aria-expanded="false">
+          <span class="inventory-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        </button>
+        <button id="hintBtn" class="icon-btn hint-button" type="button" aria-label="Hint">?</button>
+      </div>
     </header>
 
-    <nav id="nav" class="nav" aria-label="Navigation"></nav>
+    <div id="sceneToast" class="scene-toast" role="status" aria-live="polite"></div>
+    <nav id="nav" class="nav" aria-label="Scene navigation"></nav>
 
-    <footer class="hud">
-      <button id="satchelButton" class="hud-button" type="button" aria-label="Open satchel" aria-expanded="false">
-        <span class="bag-icon" aria-hidden="true"></span>
-      </button>
-      <div class="slots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-      <button id="hintButton" class="hud-button hint" type="button" aria-label="Hint">?</button>
-    </footer>
+    <div class="inventory-peek" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
 
-    <aside id="satchel" class="satchel" aria-hidden="true">
-      <div class="satchel-header"><span>SATCHEL</span><button id="satchelClose" type="button" aria-label="Close satchel">×</button></div>
-      <div class="satchel-grid"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <aside id="inventoryDrawer" class="inventory-drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div><small>FIELD KIT</small><strong>INVENTORY</strong></div>
+        <button id="inventoryClose" class="drawer-close" type="button" aria-label="Close inventory">×</button>
+      </div>
+      <div class="inventory-grid" aria-label="Inventory slots">
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+        <button type="button" class="inventory-slot" aria-label="Empty slot"></button>
+      </div>
       <p>Nothing collected yet.</p>
     </aside>
 
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <div id="qaReport" hidden></div>
+    <div id="hintToast" class="hint-toast" role="status" aria-live="polite"></div>
+
+    <div id="assetError" class="asset-error" hidden role="alert">
+      <strong>Scene image unavailable</strong>
+      <span>Reload the page.</span>
+    </div>
+
+    <div id="echoLayer" class="echo-layer" aria-hidden="true"></div>
   </main>
-  <script type="module" src="./app.js?v=4"></script>
+
+  <script type="module" src="./app.js?v=61"></script>
 </body>
 </html>
