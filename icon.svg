@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="92" fill="#0b0f0d"/>
+<rect x="42" y="42" width="428" height="428" rx="68" fill="none" stroke="#9cad86" stroke-width="8"/>
+<path d="M143 174c43-70 132-90 208-48-58-4-90 19-105 55 42-18 84-9 117 25-49-13-89 2-119 45 1 56 39 86 91 111-82 3-147-24-181-74-29-43-33-78-11-114Z" fill="#dfe6d6" opacity=".92"/>
+<text x="256" y="420" fill="#9cad86" font-family="monospace" font-size="37" text-anchor="middle" letter-spacing="8">ENIGMA</text>
+</svg>
