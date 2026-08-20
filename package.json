@@ -1,0 +1,11 @@
+{
+  "name": "shattered-dragons-enigma",
+  "private": true,
+  "version": "0.0.5",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}
