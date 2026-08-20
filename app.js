@@ -1,56 +1,37 @@
-import campImage from './assets/camp-b.js';
-import trailImage from './assets/trail-b.js';
-import anomalyImage from './assets/anomaly.js';
-import entranceImage from './assets/entrance.js';
-import labImage from './assets/lab.js';
-
-const BUILD = 'v6.2';
-
-function normalizeImageSource(value) {
-  const src = String(value || '').trim();
-  if (!src) throw new Error('Empty image source');
-  if (src.startsWith('data:image/')) return src;
-  if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('./') || src.startsWith('../') || src.startsWith('/')) return src;
-  // The repository image modules currently export raw WebP base64 strings.
-  // Convert them into valid browser image URLs in one central place.
-  if (/^[A-Za-z0-9+/=\s]+$/.test(src) && src.length > 128) {
-    return `data:image/webp;base64,${src.replace(/\s+/g, '')}`;
-  }
-  throw new Error('Unsupported image source format');
-}
+const BUILD = 'v7';
 
 const SCENES = {
   camp: {
     name: 'Camp perimeter',
-    image: campImage,
+    image: './assets/scenes/camp.avif?v=7',
     hint: 'The biodiversity team marked a route east of camp.',
     exits: { forward: 'trail' },
     hotspot: [38, 18, 46, 58]
   },
   trail: {
     name: 'Jungle approach',
-    image: trailImage,
+    image: './assets/scenes/trail.avif?v=7',
     hint: 'The survey markers continue deeper into the forest.',
     exits: { forward: 'anomaly', back: 'camp' },
     hotspot: [33, 16, 38, 60]
   },
   anomaly: {
     name: 'Marked clearing',
-    image: anomalyImage,
+    image: './assets/scenes/anomaly.avif?v=7',
     hint: 'The team flagged something beneath the roots ahead.',
     exits: { forward: 'entrance', back: 'trail' },
     hotspot: [31, 18, 42, 58]
   },
   entrance: {
     name: 'Buried access',
-    image: entranceImage,
+    image: './assets/scenes/entrance.avif?v=7',
     hint: 'The geometry is artificial. The opening continues inward.',
     exits: { forward: 'lab', back: 'anomaly' },
     hotspot: [29, 20, 44, 56]
   },
   lab: {
     name: 'Containment hall',
-    image: labImage,
+    image: './assets/scenes/lab.avif?v=7',
     hint: 'This place was not built for a biodiversity survey.',
     exits: { back: 'entrance' },
     hotspot: null
@@ -76,19 +57,18 @@ let transitionToken = 0;
 let toastTimer = null;
 let hintTimer = null;
 
-function loadImage(value) {
-  const src = normalizeImageSource(value);
+function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => {
       if (!img.naturalWidth || !img.naturalHeight) {
-        reject(new Error('Image has no intrinsic dimensions'));
+        reject(new Error(`Image has no intrinsic dimensions: ${src}`));
         return;
       }
-      resolve({ img, src });
+      resolve(img);
     };
-    img.onerror = () => reject(new Error('Image failed to decode'));
+    img.onerror = () => reject(new Error(`Image failed to decode: ${src}`));
     img.src = src;
   });
 }
@@ -171,12 +151,12 @@ async function goTo(id, initial = false) {
 
     currentId = id;
     document.getElementById('game').dataset.scene = id;
-    sceneImage.src = decoded.src;
+    sceneImage.src = scene.image;
     sceneImage.alt = '';
-    backdropImage.src = decoded.src;
+    backdropImage.src = scene.image;
     backdropImage.alt = '';
 
-    const safeWidth = Math.max(720, Math.min(1180, decoded.img.naturalWidth));
+    const safeWidth = Math.max(720, Math.min(1180, decoded.naturalWidth));
     sceneFrame.style.setProperty('--scene-max-width', `${safeWidth}px`);
     sceneFrame.dataset.ready = 'true';
 
@@ -188,7 +168,7 @@ async function goTo(id, initial = false) {
     console.error(`[${BUILD}] scene asset error`, id, error);
     assetError.hidden = false;
     assetError.querySelector('strong').textContent = 'Scene image unavailable';
-    assetError.querySelector('span').textContent = 'This build failed its image decode step.';
+    assetError.querySelector('span').textContent = 'The scene asset could not be decoded. This build is blocked.';
   } finally {
     if (token === transitionToken) document.body.classList.remove('is-loading');
   }
