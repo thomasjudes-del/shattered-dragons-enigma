@@ -1,47 +1,40 @@
-import expeditionData from './assets/expedition.js';
-import trailA from './assets/trail-a.js';
-import trailB from './assets/trail-b.js';
-import entranceData from './assets/entrance.js';
-import labData from './assets/lab.js';
-
-const BUILD = 'v9.4';
-const dataUrl = (value) => value.startsWith('data:') ? value : `data:image/webp;base64,${value}`;
+const BUILD = 'v9.5';
 
 const SCENES = {
   camp: {
-    src: null,
-    next: 'expedition',
-    back: null,
-    hotspot: [49, 18, 48, 70],
-    hint: 'The survey team is waiting beyond the camp.'
-  },
-  expedition: {
-    src: dataUrl(expeditionData),
+    src: './assets/scenes/camp.avif?v=95',
     next: 'trail',
-    back: 'camp',
-    hotspot: [52, 12, 46, 78],
-    hint: 'Follow the expedition route into the forest.'
+    back: null,
+    hotspot: [42, 14, 52, 76],
+    hint: 'The survey route continues into the forest.'
   },
   trail: {
-    src: dataUrl(trailA + trailB),
+    src: './assets/scenes/trail.avif?v=95',
+    next: 'anomaly',
+    back: 'camp',
+    hotspot: [30, 10, 48, 78],
+    hint: 'Follow the route deeper into the jungle.'
+  },
+  anomaly: {
+    src: './assets/scenes/anomaly.avif?v=95',
     next: 'entrance',
-    back: 'expedition',
-    hotspot: [38, 18, 36, 68],
-    hint: 'The route ends at something that should not be here.'
+    back: 'trail',
+    hotspot: [28, 14, 48, 72],
+    hint: 'Something ahead does not belong here.'
   },
   entrance: {
-    src: dataUrl(entranceData),
+    src: './assets/scenes/entrance.avif?v=95',
     next: 'lab',
-    back: 'trail',
-    hotspot: [34, 24, 38, 64],
-    hint: 'The buried entrance is the only way forward.'
+    back: 'anomaly',
+    hotspot: [27, 16, 50, 72],
+    hint: 'The opening is the only visible way forward.'
   },
   lab: {
-    src: dataUrl(labData),
+    src: './assets/scenes/lab.avif?v=95',
     next: null,
     back: 'entrance',
     hotspot: null,
-    hint: 'End of the V0 navigation slice.'
+    hint: 'End of the navigation slice.'
   }
 };
 
@@ -59,49 +52,6 @@ const echoLayer = document.getElementById('echoLayer');
 let current = 'camp';
 let busy = false;
 let hintTimer = null;
-const decoded = new Map();
-
-function fatal(message) {
-  game.dataset.assetsReady = 'false';
-  errorBox.textContent = message;
-  errorBox.hidden = false;
-  sceneImage.removeAttribute('src');
-  hotspotLayer.replaceChildren();
-}
-
-async function loadCampText() {
-  const response = await fetch(`./assets/scene-camp.webp?v=94`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`camp asset HTTP ${response.status}`);
-  const text = (await response.text()).trim();
-  if (!/^UklG[A-Za-z0-9+/=]+$/.test(text) || text.length < 10000) {
-    throw new Error('camp asset is not valid base64 WebP text');
-  }
-  return dataUrl(text);
-}
-
-function decodeImage(name, src) {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.decoding = 'async';
-    image.onload = () => {
-      if (image.naturalWidth < 900 || image.naturalHeight < 500) {
-        reject(new Error(`${name} decoded at only ${image.naturalWidth}x${image.naturalHeight}`));
-        return;
-      }
-      decoded.set(name, { width: image.naturalWidth, height: image.naturalHeight });
-      resolve();
-    };
-    image.onerror = () => reject(new Error(`${name} failed to decode`));
-    image.src = src;
-  });
-}
-
-async function validateAllAssets() {
-  SCENES.camp.src = await loadCampText();
-  for (const [name, scene] of Object.entries(SCENES)) {
-    await decodeImage(name, scene.src);
-  }
-}
 
 function setInventory(open) {
   inventory.classList.toggle('open', open);
@@ -113,7 +63,7 @@ function showHint() {
   clearTimeout(hintTimer);
   hintToast.textContent = SCENES[current].hint;
   hintToast.classList.add('show');
-  hintTimer = setTimeout(() => hintToast.classList.remove('show'), 2600);
+  hintTimer = setTimeout(() => hintToast.classList.remove('show'), 2400);
 }
 
 function echo(x, y) {
@@ -123,6 +73,20 @@ function echo(x, y) {
   ripple.style.top = `${y}px`;
   echoLayer.appendChild(ripple);
   setTimeout(() => ripple.remove(), 450);
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => img.naturalWidth > 0 && img.naturalHeight > 0 ? resolve(img) : reject(new Error('zero-size image'));
+    img.onerror = () => reject(new Error(`failed to load ${src}`));
+    img.src = src;
+  });
+}
+
+async function validateAssets() {
+  for (const scene of Object.values(SCENES)) await loadImage(scene.src);
 }
 
 function renderHotspot(scene) {
@@ -152,12 +116,7 @@ async function go(name) {
   errorBox.hidden = true;
   sceneImage.classList.add('changing');
   try {
-    const preload = new Image();
-    await new Promise((resolve, reject) => {
-      preload.onload = resolve;
-      preload.onerror = reject;
-      preload.src = scene.src;
-    });
+    await loadImage(scene.src);
     current = name;
     game.dataset.scene = name;
     sceneImage.src = scene.src;
@@ -165,8 +124,10 @@ async function go(name) {
     backBtn.hidden = !scene.back;
     renderHotspot(scene);
     requestAnimationFrame(() => sceneImage.classList.remove('changing'));
-  } catch {
-    fatal(`Scene failed to load: ${name}`);
+  } catch (error) {
+    console.error('[SDE scene]', error);
+    errorBox.textContent = 'Scene failed to load.';
+    errorBox.hidden = false;
   } finally {
     busy = false;
   }
@@ -179,10 +140,6 @@ backBtn.addEventListener('click', () => {
 
 hintBtn.addEventListener('click', showHint);
 satchelBtn.addEventListener('click', () => setInventory(!inventory.classList.contains('open')));
-
-inventory.addEventListener('click', (event) => {
-  if (event.target === inventory) setInventory(false);
-});
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') setInventory(false);
@@ -200,13 +157,14 @@ async function boot() {
       const keys = await caches.keys();
       await Promise.all(keys.map((key) => caches.delete(key)));
     }
-    await validateAllAssets();
+    await validateAssets();
     game.dataset.assetsReady = 'true';
-    game.dataset.assetDimensions = JSON.stringify(Object.fromEntries(decoded));
     await go('camp');
   } catch (error) {
     console.error('[SDE boot]', error);
-    fatal(`Asset validation failed: ${error.message}`);
+    errorBox.textContent = 'Scene assets failed to load.';
+    errorBox.hidden = false;
+    game.dataset.assetsReady = 'false';
   }
 }
 
