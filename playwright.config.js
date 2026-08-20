@@ -16,7 +16,20 @@ export default defineConfig({
     trace: 'retain-on-failure'
   },
   projects: [
-    { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
-    { name: 'iphone', use: { ...devices['iPhone 13'] } }
+    {
+      name: 'desktop-chromium',
+      use: {
+        browserName: 'chromium',
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 900 }
+      }
+    },
+    {
+      name: 'iphone-webkit',
+      use: {
+        browserName: 'webkit',
+        ...devices['iPhone 13']
+      }
+    }
   ]
 });
