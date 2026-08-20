@@ -1,21 +1,20 @@
 name: Browser smoke test
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install
-      - run: npx playwright install --with-deps chromium webkit
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Upload QA screenshots
         if: always()
