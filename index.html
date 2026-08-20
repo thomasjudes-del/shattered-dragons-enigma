@@ -3,46 +3,47 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#020302">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SD Enigma">
-  <meta name="build" content="v9.5">
-  <link rel="stylesheet" href="./styles.css?v=95">
+  <meta name="build" content="v10.0">
+  <link rel="stylesheet" href="./styles.css?v=100">
   <title>Shattered Dragons: Enigma</title>
 </head>
 <body>
-  <main id="game" class="game" data-scene="camp" data-assets-ready="false">
-    <section id="sceneFrame" class="scene-frame" aria-label="Game scene">
-      <img id="sceneImage" class="scene-image" alt="" draggable="false">
-      <div class="scene-vignette" aria-hidden="true"></div>
+  <main id="game" class="game" data-scene="camp" data-assets-ready="false" data-qa="pending">
+    <section id="stage" class="stage" aria-label="Game scene">
+      <canvas id="sceneCanvas" class="scene-canvas" width="1600" height="900" aria-label="Current scene"></canvas>
       <div id="hotspotLayer" class="hotspot-layer"></div>
+      <div class="vignette" aria-hidden="true"></div>
+
+      <button id="hintBtn" class="round-button hint-button" type="button" aria-label="Hint">
+        <span class="magnifier" aria-hidden="true"></span>
+      </button>
+
+      <button id="backBtn" class="round-button back-button" type="button" aria-label="Go back" hidden>
+        <span class="back-chevron" aria-hidden="true"></span>
+      </button>
+
+      <aside id="inventory" class="inventory" aria-hidden="true" aria-label="Inventory">
+        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
+        <button class="inventory-slot" type="button" aria-label="Empty inventory slot"></button>
+      </aside>
+
+      <button id="satchelBtn" class="satchel-button" type="button" aria-label="Open satchel" aria-expanded="false">
+        <img id="satchelImage" alt="" draggable="false">
+      </button>
+
+      <div id="hintToast" class="hint-toast" role="status" aria-live="polite"></div>
+      <div id="errorBox" class="error-box" hidden role="alert"></div>
+      <div id="echoLayer" class="echo-layer" aria-hidden="true"></div>
+      <div id="loading" class="loading">Loading expedition…</div>
     </section>
-
-    <button id="hintBtn" class="hud-button hint-button" type="button" aria-label="Hint">
-      <span class="magnifier" aria-hidden="true"></span>
-    </button>
-
-    <button id="backBtn" class="hud-button back-button" type="button" aria-label="Go back" hidden>
-      <span class="back-chevron" aria-hidden="true"></span>
-    </button>
-
-    <button id="satchelBtn" class="satchel-button" type="button" aria-label="Open inventory" aria-expanded="false">
-      <span class="satchel-label">KIT</span>
-    </button>
-
-    <aside id="inventory" class="inventory" aria-hidden="true">
-      <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
-      <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
-      <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
-      <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
-      <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
-    </aside>
-
-    <div id="hintToast" class="hint-toast" role="status" aria-live="polite"></div>
-    <div id="errorBox" class="error-box" hidden role="alert"></div>
-    <div id="echoLayer" class="echo-layer" aria-hidden="true"></div>
   </main>
-  <script type="module" src="./app.js?v=95"></script>
+  <script type="module" src="./app.js?v=100"></script>
 </body>
 </html>
