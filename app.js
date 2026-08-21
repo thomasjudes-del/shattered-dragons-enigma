@@ -1,7 +1,7 @@
 const scenes = [
   {
     id:'camp',
-    src:'https://images.pexels.com/photos/6271505/pexels-photo-6271505.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    src:'./assets/scenes/camp-hd.avif?v=162',
     pos:'center center',
     hint:'The biodiversity survey camp is the last normal place on the route.',
     hotspot:[52,18,38,70]
