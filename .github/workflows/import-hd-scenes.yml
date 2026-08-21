@@ -1,0 +1,77 @@
+name: Import HD scenes once
+
+on:
+  push:
+    branches:
+      - hd-scenes-import-20260821
+    paths:
+      - assets/import/READY
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hd-scenes-import-20260821
+
+      - name: Decode scene assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/scenes
+          for name in camp team map entrance lab; do
+            cat assets/import/${name}.part*.b64 | tr -d '\n\r ' | base64 -d > assets/scenes/${name}-hd.webp
+            test -s assets/scenes/${name}-hd.webp
+          done
+          file assets/scenes/*-hd.webp
+
+      - name: Point V0 at GitHub assets
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('app.js')
+          s = p.read_text()
+          replacements = {
+              'https://images.pexels.com/photos/6271505/pexels-photo-6271505.jpeg?auto=compress&cs=tinysrgb&w=2200': './assets/scenes/camp-hd.webp',
+              'https://images.unsplash.com/photo-1586957469525-7850e7bef283?auto=format&fit=crop&w=2200&q=88': './assets/scenes/team-hd.webp',
+              'https://images.pexels.com/photos/10595421/pexels-photo-10595421.jpeg?auto=compress&cs=tinysrgb&w=2200': './assets/scenes/map-hd.webp',
+              'https://images.pexels.com/photos/4520377/pexels-photo-4520377.jpeg?auto=compress&cs=tinysrgb&w=2200': './assets/scenes/entrance-hd.webp',
+              'https://images.pexels.com/photos/1411391/pexels-photo-1411391.jpeg?auto=compress&cs=tinysrgb&w=2200': './assets/scenes/lab-hd.webp',
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit(f'Missing expected scene URL: {old}')
+              s = s.replace(old, new)
+          p.write_text(s)
+
+          p = Path('index.html')
+          s = p.read_text()
+          if './styles.css?v=160' not in s or './app.js?v=160' not in s:
+              raise SystemExit('Missing expected V160 cache references')
+          s = s.replace('./styles.css?v=160', './styles.css?v=161')
+          s = s.replace('./app.js?v=160', './app.js?v=161')
+          old_satchel = 'https://res.cloudinary.com/u6hwxp4g/image/upload/v1787259800/satchel-v0.webp'
+          if old_satchel not in s:
+              raise SystemExit('Missing expected Cloudinary satchel URL')
+          s = s.replace(old_satchel, './assets/clean/satchel.webp')
+          p.write_text(s)
+          PY
+
+      - name: Clean importer and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf assets/import
+          rm -f .github/workflows/import-hd-scenes.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js index.html assets/scenes
+          git add -u
+          git commit -m "Use HD project scenes from GitHub"
+          git push origin HEAD:hd-scenes-import-20260821
