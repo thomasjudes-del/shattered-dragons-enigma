@@ -1,0 +1,51 @@
+name: Materialize HD camp scene on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: camp-hd-pipeline-20260821
+          fetch-depth: 0
+
+      - name: Decode and validate AVIF
+        run: |
+          mkdir -p assets/scenes
+          cat \
+            assets/import-camp/camp.part01a1.b64 \
+            assets/import-camp/camp.part01a2.b64 \
+            assets/import-camp/camp.part01a3.b64 \
+            assets/import-camp/camp.part01b.b64 \
+            assets/import-camp/camp.part02.b64 \
+            assets/import-camp/camp.part03.b64 \
+            assets/import-camp/camp.part04a.b64 \
+            assets/import-camp/camp.part04b.b64 \
+            assets/import-camp/camp.part05.b64 \
+            assets/import-camp/camp.part06.b64 \
+            assets/import-camp/camp.part07.b64 \
+            assets/import-camp/camp.part08.b64 \
+            assets/import-camp/camp.part09.b64 \
+            | tr -d '\n\r ' | base64 -d > assets/scenes/camp-hd.avif
+          echo '7b722b95cbb509a1393df4d45f902cd4bef67db8ef10ecda9317e4014d9f577f  assets/scenes/camp-hd.avif' | sha256sum -c -
+          test "$(stat -c%s assets/scenes/camp-hd.avif)" -eq 99954
+
+      - name: Commit materialized scene and clean transfer files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf assets/import-camp
+          rm -f .github/workflows/materialize-camp-hd.yml .github/workflows/materialize-camp-hd-pr.yml
+          git add -A
+          git commit -m 'Materialize HD camp scene'
+          git push origin HEAD:camp-hd-pipeline-20260821
