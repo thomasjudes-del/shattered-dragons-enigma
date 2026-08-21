@@ -1,0 +1,95 @@
+name: Finalize HD camp validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout validation branch
+        uses: actions/checkout@v4
+        with:
+          ref: camp-hd-pipeline-20260821
+          fetch-depth: 0
+
+      - name: Ensure verified Camp binary exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f assets/scenes/camp-hd.avif ]; then
+            mkdir -p assets/scenes
+            cat \
+              assets/import-camp/camp.part01a1.b64 \
+              assets/import-camp/camp.part01a2.b64 \
+              assets/import-camp/camp.part01a3.b64 \
+              assets/import-camp/camp.part01b.b64 \
+              assets/import-camp/camp.part02.b64 \
+              assets/import-camp/camp.part03.b64 \
+              assets/import-camp/camp.part04a.b64 \
+              assets/import-camp/camp.part04b.b64 \
+              assets/import-camp/camp.part05.b64 \
+              assets/import-camp/camp.part06.b64 \
+              assets/import-camp/camp.part07.b64 \
+              assets/import-camp/camp.part08.b64 \
+              assets/import-camp/camp.part09.b64 \
+              | tr -d '\n\r ' | base64 -d > assets/scenes/camp-hd.avif
+          fi
+          echo '7b722b95cbb509a1393df4d45f902cd4bef67db8ef10ecda9317e4014d9f577f  assets/scenes/camp-hd.avif' | sha256sum -c -
+          test "$(stat -c%s assets/scenes/camp-hd.avif)" -eq 99954
+
+      - name: Apply only Camp source and cache bump
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          app = Path('app.js')
+          text = app.read_text()
+          pattern = r"(camp\s*:\s*\{.*?\bsrc\s*:\s*)['\"][^'\"]+['\"]"
+          replacement = r"\1'./assets/scenes/camp-hd.avif?v=161'"
+          text2, n = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit(f'Camp src replacement count: {n}')
+          app.write_text(text2)
+
+          index = Path('index.html')
+          html = index.read_text()
+          html2, n = re.subn(r'\./app\.js\?v=\d+', './app.js?v=161', html, count=1)
+          if n != 1:
+              raise SystemExit(f'app.js cache replacement count: {n}')
+          index.write_text(html2)
+          PY
+
+      - name: Remove all temporary transfer machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf assets/import-camp
+          rm -f .github/workflows/materialize-camp-hd*.yml
+          rm -f .github/workflows/apply-camp-hd*.yml
+          rm -f .github/workflows/finalize-camp-hd-validation.yml
+
+      - name: Commit and prove final tree is minimal
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Finalize GitHub-hosted HD camp validation'
+          fi
+          git fetch origin main
+          actual="$(git diff --name-only origin/main...HEAD | sort)"
+          expected="$(printf '%s\n' app.js assets/scenes/camp-hd.avif index.html | sort)"
+          printf 'Final diff:\n%s\n' "$actual"
+          test "$actual" = "$expected"
+          git push origin HEAD:camp-hd-pipeline-20260821
