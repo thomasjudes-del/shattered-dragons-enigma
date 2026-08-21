@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Shattered Dragons: Enigma</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}body{font-family:Arial,Helvetica,sans-serif;color:#fff}.game{position:fixed;inset:0;background:#000;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}.backdrop{position:absolute;inset:-30px;width:calc(100% + 60px);height:calc(100% + 60px);object-fit:cover;filter:blur(28px) brightness(.22) saturate(.8);transform:scale(1.05);opacity:.8;pointer-events:none}.stage{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100dvh;width:min(100vw,calc(100dvh * 941 / 1672));overflow:hidden;background:#050605;box-shadow:0 0 80px rgba(0,0,0,.75)}.scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:opacity .14s ease}.scene.fade{opacity:.18}.vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.16),transparent 16%,transparent 76%,rgba(0,0,0,.26));box-shadow:inset 0 0 64px rgba(0,0,0,.16)}button{font:inherit;-webkit-tap-highlight-color:transparent}.hotspot{position:absolute;z-index:4;border:0;background:transparent;padding:0;cursor:pointer}.round{position:absolute;z-index:10;width:62px;height:62px;border-radius:50%;border:1px solid rgba(235,224,194,.4);background:rgba(5,7,6,.46);color:#f2eee5;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.25)}.hint{top:max(14px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left))}.hint span{position:absolute;left:15px;top:13px;width:27px;height:27px;border:3px solid currentColor;border-radius:50%}.hint span:after{content:"";position:absolute;width:19px;height:3px;background:currentColor;left:21px;top:22px;transform:rotate(45deg);transform-origin:left center;border-radius:2px}.back{left:max(16px,env(safe-area-inset-left));bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px))}.back i{position:absolute;width:23px;height:23px;left:23px;top:18px;border-left:4px solid currentColor;border-bottom:4px solid currentColor;transform:rotate(45deg)}.satchel{position:absolute;z-index:12;right:max(12px,env(safe-area-inset-right));bottom:max(9px,calc(env(safe-area-inset-bottom) + 4px));width:100px;height:100px;padding:0;border:0;background:transparent;cursor:pointer;filter:drop-shadow(0 10px 12px rgba(0,0,0,.62))}.satchel img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}.inventory{position:absolute;z-index:11;left:90px;right:105px;bottom:max(22px,calc(env(safe-area-inset-bottom) + 14px));display:grid;grid-template-columns:repeat(5,1fr);gap:7px;padding:8px;border:1px solid rgba(214,195,147,.25);border-radius:12px;background:rgba(4,6,5,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transform:translateY(8px);pointer-events:none;transition:.12s ease}.inventory.open{opacity:1;transform:none;pointer-events:auto}.slot{aspect-ratio:1;border:1px solid rgba(220,202,156,.24);border-radius:7px;background:rgba(7,10,8,.45)}.toast,.error,.loading{position:absolute;z-index:20;left:50%;transform:translateX(-50%);text-align:center}.toast{bottom:116px;max-width:78%;padding:10px 13px;border-radius:9px;background:rgba(4,6,5,.82);font-size:13px;line-height:1.35;opacity:0;transition:opacity .14s;pointer-events:none}.toast.show{opacity:1}.error{top:50%;transform:translate(-50%,-50%);padding:12px 16px;border-radius:9px;background:rgba(28,7,3,.92);border:1px solid rgba(163,75,51,.6);font-size:13px}.loading{top:50%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.62}.echoes{position:fixed;inset:0;z-index:25;pointer-events:none}.echo{position:fixed;width:12px;height:12px;margin:-6px;border:1px solid rgba(240,225,188,.82);border-radius:50%;animation:echo .45s ease-out forwards}@keyframes echo{to{transform:scale(4.3);opacity:0}}@media(max-width:700px){.stage{width:100vw;height:100dvh}.backdrop{display:none}.round{width:58px;height:58px}.satchel{width:88px;height:88px}.inventory{left:86px;right:96px;gap:5px;padding:7px}.vignette{box-shadow:inset 0 0 46px rgba(0,0,0,.13)}}
+</style>
+</head>
+<body>
+<main class="game" id="game" data-scene="camp">
+<img class="backdrop" id="backdrop" alt="" aria-hidden="true">
+<section class="stage">
+<img class="scene" id="scene" alt="" draggable="false">
+<div class="vignette"></div>
+<button class="hotspot" id="hotspot" aria-label="Explore"></button>
+<button class="round hint" id="hint" aria-label="Hint"><span></span></button>
+<button class="round back" id="back" aria-label="Back" hidden><i></i></button>
+<div class="inventory" id="inventory" aria-hidden="true"><button class="slot" aria-label="Empty slot"></button><button class="slot" aria-label="Empty slot"></button><button class="slot" aria-label="Empty slot"></button><button class="slot" aria-label="Empty slot"></button><button class="slot" aria-label="Empty slot"></button></div>
+<button class="satchel" id="satchel" aria-label="Open inventory" aria-expanded="false"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-satchel.png" alt="" draggable="false"></button>
+<div class="toast" id="toast"></div><div class="error" id="error" hidden></div><div class="loading" id="loading">Loading expedition…</div>
+</section><div class="echoes" id="echoes"></div>
+</main>
+<script>
+const scenes=[
+{id:'camp',src:'https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-camp.png',hint:'The biodiversity survey camp is the last normal place on the route.',hotspot:[10,8,80,78]},
+{id:'team',src:'https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-team.png',hint:'The expedition has found something that does not belong here.',hotspot:[12,10,76,76]},
+{id:'map',src:'https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-map.png',hint:'One marked route leaves the biodiversity survey area.',hotspot:[10,10,80,76]},
+{id:'entrance',src:'https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-entrance.png',hint:'The buried entrance is the only obvious way forward.',hotspot:[14,14,72,70]},
+{id:'lab',src:'https://res.cloudinary.com/u6hwxp4g/image/upload/sde-v152-lab.png',hint:'End of the navigation V0.',hotspot:null}
+];
+const game=document.getElementById('game'),scene=document.getElementById('scene'),backdrop=document.getElementById('backdrop'),hotspot=document.getElementById('hotspot'),back=document.getElementById('back'),hint=document.getElementById('hint'),satchel=document.getElementById('satchel'),inventory=document.getElementById('inventory'),toast=document.getElementById('toast'),error=document.getElementById('error'),loading=document.getElementById('loading'),echoes=document.getElementById('echoes');let index=0,busy=false,timer;const cache=new Map();
+function preload(src){return new Promise((resolve,reject)=>{if(cache.has(src))return resolve(cache.get(src));const i=new Image();i.decoding='async';i.onload=()=>{if(!i.naturalWidth||!i.naturalHeight)return reject();cache.set(src,i);resolve(i)};i.onerror=reject;i.src=src})}
+function setHotspot(s){if(!s.hotspot){hotspot.hidden=true;return}const[l,t,w,h]=s.hotspot;hotspot.hidden=false;Object.assign(hotspot.style,{left:l+'%',top:t+'%',width:w+'%',height:h+'%'})}
+function render(i){index=i;game.dataset.scene=scenes[i].id;back.hidden=i===0;setHotspot(scenes[i])}
+function closeInventory(){inventory.classList.remove('open');inventory.setAttribute('aria-hidden','true');satchel.setAttribute('aria-expanded','false')}
+async function go(i){if(busy||i<0||i>=scenes.length)return;busy=true;closeInventory();const next=scenes[i];try{await preload(next.src);scene.classList.add('fade');setTimeout(()=>{scene.src=next.src;backdrop.src=next.src;render(i);requestAnimationFrame(()=>scene.classList.remove('fade'));busy=false},80)}catch(e){busy=false;showError('Scene failed to load.')}}
+function showHint(){clearTimeout(timer);toast.textContent=scenes[index].hint;toast.classList.add('show');timer=setTimeout(()=>toast.classList.remove('show'),2200)}
+function toggleInventory(){const open=!inventory.classList.contains('open');inventory.classList.toggle('open',open);inventory.setAttribute('aria-hidden',String(!open));satchel.setAttribute('aria-expanded',String(open))}
+function echo(x,y){const r=document.createElement('span');r.className='echo';r.style.left=x+'px';r.style.top=y+'px';echoes.appendChild(r);setTimeout(()=>r.remove(),460)}
+function showError(msg){error.textContent=msg;error.hidden=false;setTimeout(()=>error.hidden=true,2600)}
+hotspot.addEventListener('click',e=>{e.stopPropagation();echo(e.clientX,e.clientY);go(index+1)});back.addEventListener('click',()=>go(index-1));hint.addEventListener('click',showHint);satchel.addEventListener('click',toggleInventory);document.addEventListener('pointerdown',e=>{if(!e.target.closest('button'))echo(e.clientX,e.clientY)});document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')go(index-1);if(e.key==='Escape')closeInventory()});
+(async()=>{try{await preload(scenes[0].src);scene.src=scenes[0].src;backdrop.src=scenes[0].src;render(0);loading.hidden=true;Promise.allSettled(scenes.slice(1).map(s=>preload(s.src)))}catch(e){loading.hidden=true;showError('Initial scene failed to load.')}})();
+</script>
+</body></html>
