@@ -1,0 +1,61 @@
+name: Apply HD camp scene
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: camp-hd-pipeline-20260821
+          fetch-depth: 0
+
+      - name: Validate HD camp binary
+        run: |
+          set -euo pipefail
+          test -f assets/scenes/camp-hd.avif
+          echo '7b722b95cbb509a1393df4d45f902cd4bef67db8ef10ecda9317e4014d9f577f  assets/scenes/camp-hd.avif' | sha256sum -c -
+          test "$(stat -c%s assets/scenes/camp-hd.avif)" -eq 99954
+
+      - name: Point only Camp to local HD asset
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          app = Path('app.js')
+          text = app.read_text()
+          pattern = r"(camp\s*:\s*\{.*?\bsrc\s*:\s*)['\"][^'\"]+['\"]"
+          text2, n = re.subn(pattern, r"\1'./assets/scenes/camp-hd.avif?v=161'", text, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit(f'Camp src replacement count: {n}')
+          app.write_text(text2)
+
+          index = Path('index.html')
+          html = index.read_text()
+          old = './app.js?v=160'
+          new = './app.js?v=161'
+          if html.count(old) != 1:
+              raise SystemExit(f'Expected exactly one {old}, got {html.count(old)}')
+          index.write_text(html.replace(old, new, 1))
+          PY
+
+      - name: Clean temporary transfer machinery and commit
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf assets/import-camp
+          rm -f .github/workflows/materialize-camp-hd*.yml .github/workflows/apply-camp-hd.yml
+          git add -A
+          git commit -m 'Use GitHub-hosted HD camp scene'
+          git push origin HEAD:camp-hd-pipeline-20260821
