@@ -1,0 +1,36 @@
+name: Rebuild HD scene assets
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.asset-upload/**'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild WebP assets from upload chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/hd
+          for name in camp team map entrance lab; do
+            cat .asset-upload/${name}.*.b64 | tr -d '\n\r ' | base64 -d > assets/hd/${name}.webp
+            test -s assets/hd/${name}.webp
+          done
+      - name: Commit rebuilt binary assets
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/hd/*.webp
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Publish HD generated scene assets [skip ci]"
+          git push
