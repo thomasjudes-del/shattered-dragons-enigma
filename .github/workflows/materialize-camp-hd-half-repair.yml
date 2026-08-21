@@ -1,0 +1,81 @@
+name: Materialize HD camp scene from verified halves
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          ref: camp-hd-pipeline-20260821
+          fetch-depth: 0
+
+      - name: Repair first half and materialize AVIF
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          alphabet = b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+          src = Path('assets/import-camp/camp.part01a.b64').read_text().strip().encode()
+          target = 'a63bf0becded9be14184894ad07e9fe4664b04e5aae2480b89c54c8fc96232de'
+          repaired = None
+          if len(src) == 7500 and hashlib.sha256(src).hexdigest() == target:
+              repaired = src
+          elif len(src) == 7499:
+              for i in range(len(src) + 1):
+                  left, right = src[:i], src[i:]
+                  for c in alphabet:
+                      candidate = left + bytes((c,)) + right
+                      if hashlib.sha256(candidate).hexdigest() == target:
+                          repaired = candidate
+                          print(f'repaired first half at offset {i}: {chr(c)}')
+                          break
+                  if repaired is not None:
+                      break
+          if repaired is None:
+              raise SystemExit('Unable to repair first 7500-char half')
+          Path('/tmp/camp.part01a.repaired.b64').write_bytes(repaired)
+
+          second = Path('assets/import-camp/camp.part01b.b64').read_text().strip().encode()
+          if len(second) != 7500 or hashlib.sha256(second).hexdigest() != 'd457ee48030c03a99567816ad521ec418753b66946ed8264f1d287828f7c1c31':
+              raise SystemExit('Second half verification failed')
+          PY
+
+          mkdir -p assets/scenes
+          cat \
+            /tmp/camp.part01a.repaired.b64 \
+            assets/import-camp/camp.part01b.b64 \
+            assets/import-camp/camp.part02.b64 \
+            assets/import-camp/camp.part03.b64 \
+            assets/import-camp/camp.part04a.b64 \
+            assets/import-camp/camp.part04b.b64 \
+            assets/import-camp/camp.part05.b64 \
+            assets/import-camp/camp.part06.b64 \
+            assets/import-camp/camp.part07.b64 \
+            assets/import-camp/camp.part08.b64 \
+            assets/import-camp/camp.part09.b64 \
+            | tr -d '\n\r ' | base64 -d > assets/scenes/camp-hd.avif
+
+          echo '7b722b95cbb509a1393df4d45f902cd4bef67db8ef10ecda9317e4014d9f577f  assets/scenes/camp-hd.avif' | sha256sum -c -
+          test "$(stat -c%s assets/scenes/camp-hd.avif)" -eq 99954
+
+      - name: Commit verified binary and clean transfer files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -rf assets/import-camp
+          rm -f .github/workflows/materialize-camp-hd*.yml
+          git add -A
+          git commit -m 'Materialize verified HD camp scene'
+          git push origin HEAD:camp-hd-pipeline-20260821
