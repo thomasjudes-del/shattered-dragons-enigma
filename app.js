@@ -1,9 +1,39 @@
 const scenes = [
-  { id:'camp', src:'./assets/v0/camp.svg?v=140', hint:'The biodiversity survey camp is the last normal place on the route.', hotspot:[10,8,80,78] },
-  { id:'team', src:'./assets/v0/team.svg?v=140', hint:'The team found a structure that should not be here.', hotspot:[18,16,64,68] },
-  { id:'map', src:'./assets/v0/map.svg?v=140', hint:'One marked route leaves the biodiversity survey area.', hotspot:[10,14,80,72] },
-  { id:'entrance', src:'./assets/v0/entrance.svg?v=140', hint:'The entrance is the only obvious way forward.', hotspot:[18,18,64,66] },
-  { id:'lab', src:'./assets/v0/lab.svg?v=140', hint:'End of the navigation V0.', hotspot:null }
+  {
+    id:'camp',
+    src:'https://images.pexels.com/photos/6271505/pexels-photo-6271505.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos:'center center',
+    hint:'The biodiversity survey camp is the last normal place on the route.',
+    hotspot:[52,18,38,70]
+  },
+  {
+    id:'team',
+    src:'https://images.unsplash.com/photo-1586957469525-7850e7bef283?auto=format&fit=crop&w=2200&q=88',
+    pos:'center center',
+    hint:'The team found a route that should not be here.',
+    hotspot:[34,18,36,68]
+  },
+  {
+    id:'map',
+    src:'https://images.pexels.com/photos/10595421/pexels-photo-10595421.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos:'center center',
+    hint:'One marked route leaves the biodiversity survey area.',
+    hotspot:[8,28,34,58]
+  },
+  {
+    id:'entrance',
+    src:'https://images.pexels.com/photos/4520377/pexels-photo-4520377.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos:'center center',
+    hint:'The buried entrance is the only obvious way forward.',
+    hotspot:[34,30,34,50]
+  },
+  {
+    id:'lab',
+    src:'https://images.pexels.com/photos/1411391/pexels-photo-1411391.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    pos:'center center',
+    hint:'End of the navigation V0.',
+    hotspot:null
+  }
 ];
 
 const game = document.getElementById('game');
@@ -54,6 +84,7 @@ function render(i) {
   index = i;
   const scene = scenes[i];
   game.dataset.scene = scene.id;
+  image.style.objectPosition = scene.pos || 'center center';
   back.hidden = i === 0;
   setHotspot(scene);
 }
