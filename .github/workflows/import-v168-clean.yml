@@ -17,15 +17,15 @@ jobs:
       - name: Reconstruct and verify V168 asset bundle
         run: |
           cat assets/import-v168-clean/part*.b64 > /tmp/v168.b64
-          test "$(wc -c < /tmp/v168.b64)" -eq 338232
-          echo 'aebddcbec40671be1200c14e86094f544654b1ac8bd61cdca30df0f0f4cd4d13  /tmp/v168.b64' | sha256sum -c -
+          test "$(wc -c < /tmp/v168.b64)" -eq 190444
+          echo '0d5c368076f0d2e05750f561966bb3e1afc38408058542b95f684ba301af7942  /tmp/v168.b64' | sha256sum -c -
           base64 -d /tmp/v168.b64 > /tmp/v168.tgz
-          echo 'bac5c762224e7b66adb31ff30fa004891641f723fadd2af79585de5caa3fe993  /tmp/v168.tgz' | sha256sum -c -
+          echo '5e1c9bdfbf3853a245bbd78f00d754b5d19e0c1cdf404e32289327667c88fdd8  /tmp/v168.tgz' | sha256sum -c -
           tar -xzf /tmp/v168.tgz -C .
-          echo '974edba45370c4cd3cf06314abdd401ee6e5dfe37249ab6d1174de460b47b4f3  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
-          echo 'a680a12964f4d599df6b9e905c794eecd05cea0ec3ef1434d7475e7ae66e5b1c  assets/scenes/map-detail-hd.avif' | sha256sum -c -
-          echo 'b9647d2c3171c9d911ccae574168eeb9e5b51964dab197f80853c6b229792cfc  assets/items/compass.webp' | sha256sum -c -
-          echo 'a60209e7c1da4fcf4ad3bc589e0ecd48eb6ec802951c51244e0128438b80030e  assets/items/flashlight.webp' | sha256sum -c -
+          echo '1488653ea11dc7f662729454d0ffc645a5c6fc27b0757b7f522f70b84182cdf7  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
+          echo '34ae9ad2ad000e123749edf7781c699f7e6d807833443b4136876346b64e2bf7  assets/scenes/map-detail-hd.avif' | sha256sum -c -
+          echo '06d583c848f83a6efa1d5947355c46bf26122f14a0374e5b57e348b3d19c51b6  assets/items/compass.webp' | sha256sum -c -
+          echo '172d585526bbacb6be7beb68bd075b678902eb4d8968d5c568f1191fcc0dfa08  assets/items/flashlight.webp' | sha256sum -c -
       - name: Commit verified assets and clean temporary import files
         run: |
           rm -rf assets/import-v168-clean assets/import-v167-final3
