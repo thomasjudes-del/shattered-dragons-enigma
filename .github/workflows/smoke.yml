@@ -4,13 +4,15 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   smoke:
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -18,12 +20,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
       - name: Test current code locally
         run: npm run test:e2e -- --project=desktop-chromium
       - name: Wait for GitHub Pages V165
+        if: ${{ github.event_name == 'push' }}
         run: |
           for i in $(seq 1 30); do
             INDEX=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/?v=165" || true)
@@ -37,10 +39,12 @@ jobs:
           echo "GitHub Pages V165 did not become ready in time"
           exit 1
       - name: Test real GitHub Pages interactions
+        if: ${{ github.event_name == 'push' }}
         env:
           SDE_BASE_URL: https://thomasjudes-del.github.io/shattered-dragons-enigma/
         run: npm run test:e2e -- --project=desktop-chromium
       - name: Record verified public interaction build
+        if: ${{ github.event_name == 'push' }}
         run: |
           printf 'GitHub Pages public interaction verification succeeded.\nversion: V165\nsource_commit: %s\nchecks: map-only navigation; cup inert; flashlight pickup; compass pickup; map detail; entrance; lab; back navigation\n' "$GITHUB_SHA" > PUBLIC_INTERACTIONS_VERIFIED.txt
           git config user.name 'github-actions[bot]'
