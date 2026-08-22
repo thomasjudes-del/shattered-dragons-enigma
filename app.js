@@ -8,28 +8,28 @@ const scenes = [
   },
   {
     id:'team',
-    src:'https://images.unsplash.com/photo-1586957469525-7850e7bef283?auto=format&fit=crop&w=2200&q=88',
+    src:'./assets/scenes/team-hd.png?v=164',
     pos:'center center',
     hint:'The team found a route that should not be here.',
     hotspot:[34,18,36,68]
   },
   {
     id:'map',
-    src:'https://images.pexels.com/photos/10595421/pexels-photo-10595421.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    src:'./assets/scenes/map-hd.png?v=164',
     pos:'center center',
     hint:'One marked route leaves the biodiversity survey area.',
     hotspot:[8,28,34,58]
   },
   {
     id:'entrance',
-    src:'https://images.pexels.com/photos/4520377/pexels-photo-4520377.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    src:'./assets/scenes/entrance-hd.png?v=164',
     pos:'center center',
     hint:'The buried entrance is the only obvious way forward.',
     hotspot:[34,30,34,50]
   },
   {
     id:'lab',
-    src:'https://images.pexels.com/photos/1411391/pexels-photo-1411391.jpeg?auto=compress&cs=tinysrgb&w=2200',
+    src:'./assets/scenes/lab-hd.png?v=164',
     pos:'center center',
     hint:'End of the navigation V0.',
     hotspot:null
