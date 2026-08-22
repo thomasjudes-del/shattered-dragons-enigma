@@ -1,0 +1,32 @@
+name: Apply V168 code
+
+on:
+  push:
+    branches: [v168-final-clean]
+    paths: ['assets/import-v168-code/READY']
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply V168 code
+        run: |
+          cp assets/import-v168-code/app.js.txt app.js
+          cp assets/import-v168-code/styles.css.txt styles.css
+          cp assets/import-v168-code/index.html.txt index.html
+          cp assets/import-v168-code/smoke.spec.js.txt tests/smoke.spec.js
+          node --check app.js
+          rm -rf assets/import-v168-code
+          rm -f .github/workflows/apply-v168-code.yml
+      - name: Commit V168 code
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Implement V168 map interactions and reset'
+          git push
