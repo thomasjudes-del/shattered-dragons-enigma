@@ -2,7 +2,7 @@ name: Import verified interaction assets
 
 on:
   push:
-    branches: [main]
+    branches: [v0-stabilize]
     paths: ['assets/import-v167-final3/READY']
 
 permissions:
@@ -30,7 +30,7 @@ jobs:
       - name: Commit verified assets and remove temporary import machinery
         run: |
           rm -rf assets/import-v167-final3 assets/import-v168-clean
-          rm -f .github/workflows/import-v167-final3.yml .github/workflows/import-v168-clean.yml .github/workflows/apply-v167.yml .github/workflows/apply-v168.yml
+          rm -f .github/workflows/import-v167-final3.yml .github/workflows/import-v168-clean.yml .github/workflows/apply-v167-remote.yml .github/workflows/apply-v167.yml .github/workflows/apply-v168.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
