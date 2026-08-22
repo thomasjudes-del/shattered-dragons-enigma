@@ -1,0 +1,7 @@
+GitHub Pages public verification succeeded.
+app.js cache version: 164
+camp: GitHub-hosted HD asset
+team: 941x1672 public PNG
+map: 941x1672 public PNG
+entrance: 941x1672 public PNG
+lab: 941x1672 public PNG
