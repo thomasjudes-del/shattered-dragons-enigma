@@ -1,5 +1,6 @@
-const VERSION = '168';
+const VERSION = '169';
 const STORAGE_KEY = 'sde-inventory-v2';
+const MAP_SOURCE = `./assets/scenes/map-hd.png?v=${VERSION}`;
 
 function applyRequestedReset() {
   const url = new URL(window.location.href);
@@ -35,7 +36,7 @@ const scenes = [
   },
   {
     id: 'map',
-    src: `./assets/scenes/map-table-base-hd.avif?v=${VERSION}`,
+    src: MAP_SOURCE,
     pos: 'center center',
     hint: 'The map can be inspected. Useful expedition gear can be packed.',
     hotspots: [
@@ -46,8 +47,8 @@ const scenes = [
   },
   {
     id: 'map-detail',
-    src: `./assets/scenes/map-detail-hd.avif?v=${VERSION}`,
-    pos: 'center center',
+    src: MAP_SOURCE,
+    pos: 'center 68%',
     hint: 'The red X marks a route beyond the biodiversity survey area.',
     hotspots: [
       { id: 'route-mark', action: 'goto', target: 'entrance', area: [54, 43, 18, 16], label: 'Follow the marked route', z: 3 }
@@ -72,16 +73,8 @@ const scenes = [
 ];
 
 const ITEM_DEFS = {
-  compass: {
-    label: 'Compass',
-    iconSrc: `./assets/items/compass.webp?v=${VERSION}`,
-    prop: { left: '0.5%', top: '64.5%', width: '29%', transform: 'rotate(-5deg)' }
-  },
-  flashlight: {
-    label: 'Flashlight',
-    iconSrc: `./assets/items/flashlight.webp?v=${VERSION}`,
-    prop: { left: '-5%', top: '77%', width: '47%', transform: 'rotate(-16deg)' }
-  }
+  compass: { label: 'Compass' },
+  flashlight: { label: 'Flashlight' }
 };
 
 const sceneIndex = new Map(scenes.map((scene, i) => [scene.id, i]));
@@ -150,6 +143,19 @@ function showToast(message, duration = 1900) {
   timer = setTimeout(() => toast.classList.remove('show'), duration);
 }
 
+function makeInventoryCrop(id) {
+  const frame = document.createElement('span');
+  frame.className = `inventory-photo inventory-photo-${id}`;
+  frame.setAttribute('aria-hidden', 'true');
+  const crop = document.createElement('img');
+  crop.className = 'inventory-crop';
+  crop.src = MAP_SOURCE;
+  crop.alt = '';
+  crop.draggable = false;
+  frame.appendChild(crop);
+  return frame;
+}
+
 function renderInventory() {
   const ids = [...collected];
   inventorySlots.forEach((slot, i) => {
@@ -162,15 +168,10 @@ function renderInventory() {
       return;
     }
     const def = ITEM_DEFS[id];
-    slot.classList.add('has-item');
+    slot.classList.add('has-item', `item-${id}`);
     slot.setAttribute('aria-label', def.label);
     slot.title = def.label;
-    const icon = document.createElement('img');
-    icon.className = 'inventory-icon';
-    icon.src = def.iconSrc;
-    icon.alt = '';
-    icon.draggable = false;
-    slot.appendChild(icon);
+    slot.appendChild(makeInventoryCrop(id));
   });
 }
 
@@ -178,16 +179,11 @@ function renderMapProps(scene) {
   sceneProps.replaceChildren();
   if (scene.id !== 'map') return;
   for (const id of ['compass', 'flashlight']) {
-    if (collected.has(id)) continue;
-    const def = ITEM_DEFS[id];
-    const prop = document.createElement('img');
-    prop.className = `scene-prop scene-prop-${id}`;
-    prop.src = def.iconSrc;
-    prop.alt = '';
-    prop.draggable = false;
-    prop.setAttribute('aria-hidden', 'true');
-    Object.assign(prop.style, def.prop);
-    sceneProps.appendChild(prop);
+    if (!collected.has(id)) continue;
+    const mask = document.createElement('span');
+    mask.className = `scene-mask scene-mask-${id}`;
+    mask.setAttribute('aria-hidden', 'true');
+    sceneProps.appendChild(mask);
   }
 }
 
@@ -247,6 +243,7 @@ function render(i) {
   image.style.objectPosition = scene.pos || 'center center';
   image.style.transform = 'none';
   image.style.transformOrigin = 'center center';
+  image.classList.toggle('map-detail-fallback', scene.id === 'map-detail');
   back.hidden = i === 0;
   renderMapProps(scene);
   setHotspots(scene);
@@ -324,11 +321,7 @@ async function boot() {
     render(0);
     game.dataset.ready = 'true';
     loading.hidden = true;
-    const preloadList = [
-      ...scenes.slice(1).map(scene => scene.src),
-      ...Object.values(ITEM_DEFS).map(item => item.iconSrc)
-    ];
-    Promise.allSettled(preloadList.map(preload));
+    Promise.allSettled([...new Set(scenes.slice(1).map(scene => scene.src))].map(preload));
   } catch (err) {
     console.error(err);
     loading.hidden = true;
