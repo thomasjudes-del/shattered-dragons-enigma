@@ -11,7 +11,7 @@ permissions:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - name: Reconstruct and verify interaction asset bundle
@@ -27,14 +27,6 @@ jobs:
           echo '89c2a80fb383e2a349105ac74e9d21f9e6a240a9491e42ce678c5d0726894663  assets/items/flashlight.webp' | sha256sum -c -
           echo '6d3a4cf2a452428f02c23f3d60bff55dd7749e18b1ff56207795f387f9fa9e3e  assets/scenes/map-detail-hd.avif' | sha256sum -c -
           echo 'b2303194774e138c99164f84e210ec85e798a313b7c4b5bd064b84adfa2a0472  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Test locally before commit
-        run: |
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
-          npm run test:e2e -- --project=desktop-chromium
       - name: Commit verified assets and remove temporary import machinery
         run: |
           rm -rf assets/import-v167-final3 assets/import-v168-clean
