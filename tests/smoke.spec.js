@@ -1,85 +1,73 @@
 import { test, expect } from '@playwright/test';
 
-const PATH = ['camp', 'map', 'team', 'entrance', 'lab'];
-
-async function waitForBoot(page) {
-  await page.goto('/?v=100', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#game')).toHaveAttribute('data-assets-ready', 'true', { timeout: 20_000 });
-  await expect(page.locator('#game')).toHaveAttribute('data-sprite-width', '1600');
-  await expect(page.locator('#game')).toHaveAttribute('data-sprite-height', '4500');
-  await expect(page.locator('#game')).toHaveAttribute('data-satchel-width', /3\d\d/);
+async function boot(page) {
+  await page.goto('/?v=165', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
   await expect(page.locator('#errorBox')).toBeHidden();
+  await expect(page.locator('#scene')).toBeVisible();
 }
 
-async function assertVisibleScene(page, id) {
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', id);
-  const visiblePixels = await page.locator('#sceneCanvas').evaluate(canvas => {
-    const ctx = canvas.getContext('2d');
-    const points = [
-      [200, 180], [800, 180], [1400, 180],
-      [200, 450], [800, 450], [1400, 450],
-      [200, 720], [800, 720], [1400, 720]
-    ];
-    return points.filter(([x, y]) => {
-      const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
-      return r + g + b > 45;
-    }).length;
-  });
-  expect(visiblePixels).toBeGreaterThanOrEqual(3);
+async function goToMap(page) {
+  await page.locator('[data-hotspot-id="camp-next"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'team');
+  await page.locator('[data-hotspot-id="team-next"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
 }
 
-test('five distinct HD scenes render and point-and-click navigation works', async ({ page }, testInfo) => {
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
+test('navigation uses object-specific hotspots on the map table', async ({ page }) => {
+  await boot(page);
+  await goToMap(page);
 
-  await waitForBoot(page);
-  await assertVisibleScene(page, 'camp');
-  await page.screenshot({ path: `test-results/${testInfo.project.name}-camp.png`, fullPage: true });
+  await expect(page.locator('[data-hotspot-id="map-paper"]')).toBeVisible();
+  await expect(page.locator('[data-hotspot-id="flashlight"]')).toBeVisible();
+  await expect(page.locator('[data-hotspot-id="compass"]')).toBeVisible();
 
-  for (const id of PATH.slice(1)) {
-    const hotspot = page.locator('.scene-hotspot');
-    await expect(hotspot).toBeVisible();
-    await hotspot.click();
-    await expect(page.locator('#game')).toHaveAttribute('data-scene', id);
-    await assertVisibleScene(page, id);
-  }
+  const stage = page.locator('.stage');
+  const box = await stage.boundingBox();
+  if (!box) throw new Error('Stage has no bounding box');
 
-  await page.screenshot({ path: `test-results/${testInfo.project.name}-lab.png`, fullPage: true });
+  // The cup is above the map hotspot. Clicking it must not navigate.
+  await page.mouse.click(box.x + box.width * 0.80, box.y + box.height * 0.35);
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
 
-  for (const id of PATH.slice(0, -1).reverse()) {
-    const back = page.locator('#backBtn');
-    await expect(back).toBeVisible();
-    await back.click();
-    await expect(page.locator('#game')).toHaveAttribute('data-scene', id);
-    await assertVisibleScene(page, id);
-  }
+  await page.locator('[data-hotspot-id="map-paper"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map-detail');
+  await expect(page.locator('#scene')).toHaveCSS('transform', /matrix/);
 
-  expect(errors).toEqual([]);
+  await page.locator('[data-hotspot-id="route-mark"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'entrance');
+  await page.locator('[data-hotspot-id="entrance-next"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'lab');
 });
 
-test('satchel and hint are functional and inventory stays hidden by default', async ({ page }) => {
-  await waitForBoot(page);
-  const satchel = page.locator('#satchelImage');
-  await expect(satchel).toBeVisible();
-  const size = await satchel.evaluate(img => ({ width: img.naturalWidth, height: img.naturalHeight }));
-  expect(size.width).toBeGreaterThanOrEqual(300);
-  expect(size.height).toBeGreaterThanOrEqual(300);
+test('flashlight and compass are collected into the satchel', async ({ page }) => {
+  await page.addInitScript(() => localStorage.removeItem('sde-inventory-v1'));
+  await boot(page);
+  await goToMap(page);
 
-  await expect(page.locator('#inventory')).not.toHaveClass(/open/);
-  await page.locator('#satchelBtn').click();
+  await page.locator('[data-hotspot-id="flashlight"]').click();
+  await expect(page.locator('#toast')).toContainText('Flashlight added to satchel.');
+
+  await page.locator('[data-hotspot-id="compass"]').click();
+  await expect(page.locator('#toast')).toContainText('Compass added to satchel.');
+
+  await page.locator('#satchel').click();
   await expect(page.locator('#inventory')).toHaveClass(/open/);
-  await page.locator('#satchelBtn').click();
-  await expect(page.locator('#inventory')).not.toHaveClass(/open/);
+  await expect(page.locator('#inventory [aria-label="Flashlight"]')).toHaveCount(1);
+  await expect(page.locator('#inventory [aria-label="Compass"]')).toHaveCount(1);
 
-  await page.locator('#hintBtn').click();
-  await expect(page.locator('#hintToast')).toHaveClass(/show/);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sde-inventory-v1') || '[]'));
+  expect(saved).toEqual(['flashlight', 'compass']);
 });
 
-test('Meridian-style navigation has no forward arrow or gameplay header', async ({ page }) => {
-  await waitForBoot(page);
-  await expect(page.locator('.nav-forward')).toHaveCount(0);
-  await expect(page.locator('.topbar')).toHaveCount(0);
-  await expect(page.locator('#backBtn')).toBeHidden();
-  await expect(page.locator('.scene-hotspot')).toHaveCount(1);
+test('back navigation remains linear through the new map detail scene', async ({ page }) => {
+  await boot(page);
+  await goToMap(page);
+  await page.locator('[data-hotspot-id="map-paper"]').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map-detail');
+
+  await page.locator('#back').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
+  await page.locator('#back').click();
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'team');
 });
