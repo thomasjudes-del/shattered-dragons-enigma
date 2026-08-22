@@ -1,0 +1,30 @@
+name: Import V167 clean assets
+
+on:
+  push:
+    branches: [v167-object-overlays-clean]
+    paths:
+      - 'assets/import-v167-clean/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild V167 bundle
+        run: |
+          cat assets/import-v167-clean/chunk*.b64 > /tmp/v167.b64
+          base64 -d /tmp/v167.b64 > /tmp/v167.tgz
+          tar -xzf /tmp/v167.tgz -C .
+          rm -rf assets/import-v167-clean
+          rm -f .github/workflows/import-v167-clean.yml
+      - name: Commit V167 implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Implement real pickup assets and dedicated map scene'
+          git push
