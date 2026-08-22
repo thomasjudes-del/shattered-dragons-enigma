@@ -1,7 +1,7 @@
 const scenes = [
   {
     id:'camp',
-    src:'./assets/scenes/camp-hd.avif?v=162',
+    src:'./assets/scenes/camp-hd.avif?v=167',
     pos:'center center',
     hint:'The biodiversity survey camp is the last normal place on the route.',
     hotspots:[
@@ -10,7 +10,7 @@ const scenes = [
   },
   {
     id:'team',
-    src:'./assets/scenes/team-hd.png?v=164',
+    src:'./assets/scenes/team-hd.png?v=167',
     pos:'center center',
     hint:'The team found a route that should not be here.',
     hotspots:[
@@ -19,29 +19,27 @@ const scenes = [
   },
   {
     id:'map',
-    src:'./assets/scenes/map-hd.png?v=164',
+    src:'./assets/scenes/map-table-base-hd.avif?v=167',
     pos:'center center',
     hint:'The map, flashlight and compass can each be used separately.',
     hotspots:[
       { id:'map-paper', action:'goto', target:'map-detail', area:[27,43,66,41], label:'Examine the map', z:2 },
-      { id:'flashlight', action:'collect', item:'flashlight', area:[0,74,40,17], label:'Take the flashlight', z:4 },
-      { id:'compass', action:'collect', item:'compass', area:[2,64,25,15], label:'Take the compass', z:4 }
+      { id:'flashlight', action:'collect', item:'flashlight', asset:'./assets/items/flashlight.webp?v=167', area:[0,73,40,18], label:'Take the flashlight', z:4 },
+      { id:'compass', action:'collect', item:'compass', asset:'./assets/items/compass.webp?v=167', area:[2,64,25,15], label:'Take the compass', z:4 }
     ]
   },
   {
     id:'map-detail',
-    src:'./assets/scenes/map-hd.png?v=164',
+    src:'./assets/scenes/map-detail-hd.avif?v=167',
     pos:'center center',
-    zoom:2,
-    origin:'60% 64%',
     hint:'The red X marks the route beyond the biodiversity survey area.',
     hotspots:[
-      { id:'route-mark', action:'goto', target:'entrance', area:[56,45,16,14], label:'Follow the marked route' }
+      { id:'route-mark', action:'goto', target:'entrance', area:[55,47,18,14], label:'Follow the marked route' }
     ]
   },
   {
     id:'entrance',
-    src:'./assets/scenes/entrance-hd.png?v=164',
+    src:'./assets/scenes/entrance-hd.png?v=167',
     pos:'center center',
     hint:'The buried entrance is the only obvious way forward.',
     hotspots:[
@@ -50,7 +48,7 @@ const scenes = [
   },
   {
     id:'lab',
-    src:'./assets/scenes/lab-hd.png?v=164',
+    src:'./assets/scenes/lab-hd.png?v=167',
     pos:'center center',
     hint:'End of the navigation V0.',
     hotspots:[]
@@ -58,8 +56,8 @@ const scenes = [
 ];
 
 const ITEM_DEFS = {
-  flashlight: { label:'Flashlight', className:'item-flashlight' },
-  compass: { label:'Compass', className:'item-compass' }
+  flashlight: { label:'Flashlight', iconSrc:'./assets/items/flashlight.webp?v=167' },
+  compass: { label:'Compass', iconSrc:'./assets/items/compass.webp?v=167' }
 };
 
 const sceneIndex = new Map(scenes.map((scene, i) => [scene.id, i]));
@@ -92,9 +90,7 @@ function loadInventory() {
 }
 
 function saveInventory() {
-  try {
-    localStorage.setItem('sde-inventory-v1', JSON.stringify([...collected]));
-  } catch {}
+  try { localStorage.setItem('sde-inventory-v1', JSON.stringify([...collected])); } catch {}
 }
 
 function preload(src) {
@@ -112,7 +108,7 @@ function preload(src) {
   });
 }
 
-function showToast(message, duration = 2200) {
+function showToast(message, duration = 1800) {
   clearTimeout(timer);
   toast.textContent = message;
   toast.classList.add('show');
@@ -131,25 +127,25 @@ function renderInventory() {
       return;
     }
     const def = ITEM_DEFS[id];
-    slot.classList.add('has-item', def.className);
+    slot.classList.add('has-item');
     slot.setAttribute('aria-label', def.label);
     slot.title = def.label;
-    const icon = document.createElement('span');
-    icon.setAttribute('aria-hidden', 'true');
+    const icon = document.createElement('img');
+    icon.className = 'inventory-icon';
+    icon.src = def.iconSrc;
+    icon.alt = '';
+    icon.draggable = false;
     slot.appendChild(icon);
   });
 }
 
 function collectItem(id) {
   const def = ITEM_DEFS[id];
-  if (!def) return;
-  if (collected.has(id)) {
-    showToast(`${def.label} already packed.`);
-    return;
-  }
+  if (!def || collected.has(id)) return;
   collected.add(id);
   saveInventory();
   renderInventory();
+  setHotspots(scenes[index]);
   showToast(`${def.label} added to satchel.`);
 }
 
@@ -167,6 +163,7 @@ function activateHotspot(spec, event) {
 function setHotspots(scene) {
   hotspots.replaceChildren();
   for (const spec of scene.hotspots || []) {
+    if (spec.action === 'collect' && collected.has(spec.item)) continue;
     const [left, top, width, height] = spec.area;
     const button = document.createElement('button');
     button.type = 'button';
@@ -174,12 +171,16 @@ function setHotspots(scene) {
     button.dataset.hotspotId = spec.id;
     button.setAttribute('aria-label', spec.label || 'Explore');
     Object.assign(button.style, {
-      left: `${left}%`,
-      top: `${top}%`,
-      width: `${width}%`,
-      height: `${height}%`,
-      zIndex: String(spec.z || 1)
+      left: `${left}%`, top: `${top}%`, width: `${width}%`, height: `${height}%`, zIndex: String(spec.z || 1)
     });
+    if (spec.asset) {
+      const objectImage = document.createElement('img');
+      objectImage.className = `scene-item scene-item-${spec.item}`;
+      objectImage.src = spec.asset;
+      objectImage.alt = '';
+      objectImage.draggable = false;
+      button.appendChild(objectImage);
+    }
     button.addEventListener('click', event => activateHotspot(spec, event));
     hotspots.appendChild(button);
   }
@@ -190,8 +191,8 @@ function render(i) {
   const scene = scenes[i];
   game.dataset.scene = scene.id;
   image.style.objectPosition = scene.pos || 'center center';
-  image.style.transform = scene.zoom ? `scale(${scene.zoom})` : 'none';
-  image.style.transformOrigin = scene.origin || 'center center';
+  image.style.transform = 'none';
+  image.style.transformOrigin = 'center center';
   back.hidden = i === 0;
   setHotspots(scene);
 }
@@ -217,14 +218,13 @@ async function go(i) {
       busy = false;
     }, 80);
   } catch (err) {
+    console.error(err);
     busy = false;
     showError('Scene failed to load.');
   }
 }
 
-function showHint() {
-  showToast(scenes[index].hint);
-}
+function showHint() { showToast(scenes[index].hint); }
 
 function toggleInventory() {
   const open = !inventory.classList.contains('open');
@@ -265,8 +265,13 @@ async function boot() {
     render(0);
     game.dataset.ready = 'true';
     loading.hidden = true;
-    Promise.allSettled(scenes.slice(1).map(s => preload(s.src)));
+    const sources = [
+      ...scenes.slice(1).map(s => s.src),
+      ...Object.values(ITEM_DEFS).map(def => def.iconSrc)
+    ];
+    Promise.allSettled(sources.map(src => preload(src)));
   } catch (err) {
+    console.error(err);
     loading.hidden = true;
     showError('Initial scene failed to load.');
   }
