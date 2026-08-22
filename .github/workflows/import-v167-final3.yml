@@ -1,8 +1,8 @@
-name: Import verified interaction assets
+name: Emergency install verified interaction assets
 
 on:
   push:
-    branches: [main]
+    branches: [v168-emergency-fix]
     paths: ['assets/import-v167-final3/READY']
 
 permissions:
@@ -11,14 +11,11 @@ permissions:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct and verify interaction asset bundle
+      - name: Install verified assets
         run: |
-          cat assets/import-v167-final3/bin{00..19}.b64 \
-              assets/import-v167-final3/fix19-{00..07}.b64 \
-              assets/import-v167-final3/bin{20..23}.b64 > /tmp/assets.b64
+          cat assets/import-v167-final3/bin{00..19}.b64 assets/import-v167-final3/fix19-{00..07}.b64 assets/import-v167-final3/bin{20..23}.b64 > /tmp/assets.b64
           test "$(wc -c < /tmp/assets.b64)" -eq 128428
           echo '8ff1f913899ef3c1d55a2101cc10cfa7b3e163a69c04735efc51e70161f241e6  /tmp/assets.b64' | sha256sum -c -
           base64 -d /tmp/assets.b64 > /tmp/assets.tgz
@@ -27,12 +24,8 @@ jobs:
           echo '89c2a80fb383e2a349105ac74e9d21f9e6a240a9491e42ce678c5d0726894663  assets/items/flashlight.webp' | sha256sum -c -
           echo '6d3a4cf2a452428f02c23f3d60bff55dd7749e18b1ff56207795f387f9fa9e3e  assets/scenes/map-detail-hd.avif' | sha256sum -c -
           echo 'b2303194774e138c99164f84e210ec85e798a313b7c4b5bd064b84adfa2a0472  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
-      - name: Commit verified assets and remove temporary import machinery
-        run: |
-          rm -rf assets/import-v167-final3 assets/import-v168-clean
-          rm -f .github/workflows/import-v167-final3.yml .github/workflows/import-v168-clean.yml .github/workflows/apply-v167.yml .github/workflows/apply-v168.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add assets/items assets/scenes
           git commit -m 'Install verified point-and-click interaction assets [skip ci]'
           git push
