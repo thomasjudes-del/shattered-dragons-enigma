@@ -5,10 +5,14 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   smoke:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,8 +21,34 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- --project=desktop-chromium
-      - name: Upload QA screenshots
+      - name: Test current code locally
+        run: npm run test:e2e -- --project=desktop-chromium
+      - name: Wait for GitHub Pages V165
+        run: |
+          for i in $(seq 1 30); do
+            INDEX=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/?v=165" || true)
+            APP=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/app.js?v=165" || true)
+            if echo "$INDEX" | grep -q 'app.js?v=165' && echo "$APP" | grep -q "id:'map-detail'"; then
+              echo "GitHub Pages V165 is live"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "GitHub Pages V165 did not become ready in time"
+          exit 1
+      - name: Test real GitHub Pages interactions
+        env:
+          SDE_BASE_URL: https://thomasjudes-del.github.io/shattered-dragons-enigma/
+        run: npm run test:e2e -- --project=desktop-chromium
+      - name: Record verified public interaction build
+        run: |
+          printf 'GitHub Pages public interaction verification succeeded.\nversion: V165\nsource_commit: %s\nchecks: map-only navigation; cup inert; flashlight pickup; compass pickup; map detail; entrance; lab; back navigation\n' "$GITHUB_SHA" > PUBLIC_INTERACTIONS_VERIFIED.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add PUBLIC_INTERACTIONS_VERIFIED.txt
+          git commit -m 'Record public interaction verification [skip ci]'
+          git push
+      - name: Upload QA traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
