@@ -14,14 +14,13 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct and verify V168 asset bundle
+      - name: Download and verify V168 assets
         run: |
-          cat assets/import-v168-clean/part*.b64 > /tmp/v168.b64
-          test "$(wc -c < /tmp/v168.b64)" -eq 190444
-          echo '0d5c368076f0d2e05750f561966bb3e1afc38408058542b95f684ba301af7942  /tmp/v168.b64' | sha256sum -c -
-          base64 -d /tmp/v168.b64 > /tmp/v168.tgz
-          echo '5e1c9bdfbf3853a245bbd78f00d754b5d19e0c1cdf404e32289327667c88fdd8  /tmp/v168.tgz' | sha256sum -c -
-          tar -xzf /tmp/v168.tgz -C .
+          mkdir -p assets/scenes assets/items
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/scenes/map-table-base-hd.avif' -o assets/scenes/map-table-base-hd.avif
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/scenes/map-detail-hd.avif' -o assets/scenes/map-detail-hd.avif
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/items/compass.webp' -o assets/items/compass.webp
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/items/flashlight.webp' -o assets/items/flashlight.webp
           echo '1488653ea11dc7f662729454d0ffc645a5c6fc27b0757b7f522f70b84182cdf7  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
           echo '34ae9ad2ad000e123749edf7781c699f7e6d807833443b4136876346b64e2bf7  assets/scenes/map-detail-hd.avif' | sha256sum -c -
           echo '06d583c848f83a6efa1d5947355c46bf26122f14a0374e5b57e348b3d19c51b6  assets/items/compass.webp' | sha256sum -c -
