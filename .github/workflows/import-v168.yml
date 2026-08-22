@@ -5,7 +5,7 @@ on:
     branches:
       - v168-map-state-assets
     paths:
-      - assets/import-v168/READY
+      - assets/import-v168-small/READY
 
 permissions:
   contents: write
@@ -21,9 +21,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat assets/import-v168/part*.b64 | base64 -d > /tmp/v168.tgz
+          cat assets/import-v168-small/part*.b64 | base64 -d > /tmp/v168.tgz
           tar -xzf /tmp/v168.tgz -C .
-          rm -rf assets/import-v168
+          rm -rf assets/import-v168 assets/import-v168-small
           rm -f .github/workflows/import-v168.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
