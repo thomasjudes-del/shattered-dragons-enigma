@@ -19,7 +19,9 @@ jobs:
           ref: v167-final3
       - name: Reconstruct and verify exact V167 asset bundle
         run: |
-          find assets/import-v167-final3 -maxdepth 1 -name 'bin*.b64' -print | sort | xargs cat > /tmp/v167.b64
+          cat assets/import-v167-final3/bin{00..19}.b64 \
+              assets/import-v167-final3/fix19-{00..07}.b64 \
+              assets/import-v167-final3/bin{20..23}.b64 > /tmp/v167.b64
           test "$(wc -c < /tmp/v167.b64)" -eq 128428
           echo '8ff1f913899ef3c1d55a2101cc10cfa7b3e163a69c04735efc51e70161f241e6  /tmp/v167.b64' | sha256sum -c -
           base64 -d /tmp/v167.b64 > /tmp/v167.tgz
