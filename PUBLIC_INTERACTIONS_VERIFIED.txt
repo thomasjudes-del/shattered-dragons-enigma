@@ -1,4 +1,4 @@
 GitHub Pages public interaction verification succeeded.
 version: V165
-source_commit: 2f2202d7a15dac473c22a343ac213366a48cdd94
+source_commit: abe7be4773f83bf0725506020c1d2acdb85e06b6
 checks: map-only navigation; cup inert; flashlight pickup; compass pickup; map detail; entrance; lab; back navigation
