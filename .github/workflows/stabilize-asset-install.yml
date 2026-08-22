@@ -1,0 +1,42 @@
+name: Install stabilization assets
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/import-v167-final3/**'
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: ${{ github.event.pull_request.head.ref == 'v0-stabilize' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Reconstruct and verify assets
+        run: |
+          cat assets/import-v167-final3/bin{00..19}.b64 \
+              assets/import-v167-final3/fix19-{00..07}.b64 \
+              assets/import-v167-final3/bin{20..23}.b64 > /tmp/assets.b64
+          test "$(wc -c < /tmp/assets.b64)" -eq 128428
+          echo '8ff1f913899ef3c1d55a2101cc10cfa7b3e163a69c04735efc51e70161f241e6  /tmp/assets.b64' | sha256sum -c -
+          base64 -d /tmp/assets.b64 > /tmp/assets.tgz
+          tar -xzf /tmp/assets.tgz -C .
+          echo 'fb67daf3ca7bdc414c457a51eecd86113a2a0d7d13b935bb47b17b1f2d87ad4a  assets/items/compass.webp' | sha256sum -c -
+          echo '89c2a80fb383e2a349105ac74e9d21f9e6a240a9491e42ce678c5d0726894663  assets/items/flashlight.webp' | sha256sum -c -
+          echo '6d3a4cf2a452428f02c23f3d60bff55dd7749e18b1ff56207795f387f9fa9e3e  assets/scenes/map-detail-hd.avif' | sha256sum -c -
+          echo 'b2303194774e138c99164f84e210ec85e798a313b7c4b5bd064b84adfa2a0472  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
+      - name: Commit verified assets to stabilization branch
+        run: |
+          rm -rf assets/import-v167-final3 assets/import-v168-clean
+          rm -f .github/workflows/import-v167-final3.yml .github/workflows/import-v168-clean.yml .github/workflows/apply-v167-remote.yml .github/workflows/apply-v167.yml .github/workflows/apply-v168.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Install verified stabilization assets [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
