@@ -1,0 +1,47 @@
+name: Import V166 point-and-click assets
+
+on:
+  push:
+    branches: [map-state-assets-v166]
+    paths:
+      - 'assets/import-v166/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  import-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: map-state-assets-v166
+          fetch-depth: 0
+      - name: Reconstruct verified bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat assets/import-v166/bundle.part*.b64 | base64 -d > /tmp/v166-assets.tgz
+          echo 'd96e687250d1e295cac0ca54ab2373d1cad247c4c3f3d5a09ce45d6b450b9c03  /tmp/v166-assets.tgz' | sha256sum -c -
+          mkdir -p /tmp/v166 assets/scenes assets/items
+          tar -xzf /tmp/v166-assets.tgz -C /tmp/v166
+          echo '1163b8b9dc742d00b30da4342608f638730f6feb2d23eba20537df99230ad9c5  /tmp/v166/map-full-hd.avif' | sha256sum -c -
+          echo 'b55e25dd0d03e544c25b3f59f61363910b6511f1c6a00d2af79fa85096a0e7dc  /tmp/v166/map-no-compass-hd.avif' | sha256sum -c -
+          echo 'c7febdc44b8db19b25a3503a7a05ce0909958fa93871369db5d2005c43ff7229  /tmp/v166/map-no-flashlight-hd.avif' | sha256sum -c -
+          echo 'ba2bb7ca391036e81bcb85b7071781cf3e08dbf1e53bff391a11f4c15d60fd47  /tmp/v166/map-no-items-hd.avif' | sha256sum -c -
+          echo 'ad7643bc06753af7221640727ec7c73de712a9e6b2696b2f5d24edbf5ea74286  /tmp/v166/map-detail-hd.avif' | sha256sum -c -
+          echo 'c998bb7a7a83967f98d99017aa8c3d7045427de9791e0877f094fc2518405951  /tmp/v166/compass.webp' | sha256sum -c -
+          echo '45a639aa6054c7ffafd180af68e3ff9375227354cca8fd79fd4cdec6bc167f00  /tmp/v166/flashlight.webp' | sha256sum -c -
+          cp /tmp/v166/map-*-hd.avif assets/scenes/
+          cp /tmp/v166/compass.webp /tmp/v166/flashlight.webp assets/items/
+          rm -rf assets/import-v166
+          rm -f .github/workflows/import-v166-assets.yml
+      - name: Commit verified assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/scenes assets/items .github/workflows/import-v166-assets.yml assets/import-v166
+          git commit -m 'Import HD map states and inventory object assets [skip ci]'
+          git push origin HEAD:map-state-assets-v166
