@@ -7,18 +7,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Shattered Dragons: Enigma</title>
-  <link rel="stylesheet" href="./styles.css?v=160">
+  <link rel="stylesheet" href="./styles.css?v=165">
 </head>
 <body>
   <main id="game" class="game" data-scene="camp" data-ready="false">
     <section class="stage">
       <img id="scene" class="scene" alt="" draggable="false">
       <div class="vignette" aria-hidden="true"></div>
-      <button id="hotspot" class="hotspot" type="button" aria-label="Explore"></button>
+      <div id="hotspots" class="hotspots" aria-label="Interactive scene areas"></div>
       <button id="hint" class="round hint" type="button" aria-label="Hint"><span></span></button>
       <button id="back" class="round back" type="button" aria-label="Back" hidden><i></i></button>
       <div id="inventory" class="inventory" aria-hidden="true">
-        <button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button><button aria-label="Empty slot"></button>
+        <button class="inventory-slot" aria-label="Empty slot"></button><button class="inventory-slot" aria-label="Empty slot"></button><button class="inventory-slot" aria-label="Empty slot"></button><button class="inventory-slot" aria-label="Empty slot"></button><button class="inventory-slot" aria-label="Empty slot"></button>
       </div>
       <button id="satchel" class="satchel" type="button" aria-label="Open inventory" aria-expanded="false">
         <img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787259800/satchel-v0.webp" alt="" draggable="false">
@@ -29,6 +29,6 @@
       <div id="loading" class="loading">Loading expedition…</div>
     </section>
   </main>
-  <script src="./app.js?v=164" defer></script>
+  <script src="./app.js?v=165" defer></script>
 </body>
 </html>
