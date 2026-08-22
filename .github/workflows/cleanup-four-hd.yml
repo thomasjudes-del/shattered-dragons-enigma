@@ -1,0 +1,29 @@
+name: Clean temporary HD transfer files
+
+on:
+  push:
+    branches:
+      - four-hd-scenes-20260821
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: four-hd-scenes-20260821
+          fetch-depth: 0
+      - name: Keep only final scene assets and code changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf assets/import-four assets/import-four-v4
+          rm -f .github/workflows/cleanup-four-hd.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Remove temporary HD transfer files [skip ci]'
+          git push origin HEAD:four-hd-scenes-20260821
