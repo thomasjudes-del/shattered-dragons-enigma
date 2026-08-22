@@ -10,3 +10,5 @@ Rules:
 - production assets are served from this GitHub repository;
 - browser QA must pass on desktop Chromium and iPhone WebKit before merge;
 - public GitHub Pages is verified after merge before a version is announced as working.
+
+Asset installation is checksum-gated before any gameplay code is changed.
