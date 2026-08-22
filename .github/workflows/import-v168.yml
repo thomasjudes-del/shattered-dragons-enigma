@@ -1,0 +1,37 @@
+name: Import V168 interaction assets
+
+on:
+  push:
+    branches: [v168-reset-interactions]
+    paths: ['assets/import-v168/READY']
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct verified V168 assets
+        run: |
+          cat assets/import-v168/part*.b64 > /tmp/v168.b64
+          test "$(wc -c < /tmp/v168.b64)" -eq 338232
+          echo 'aebddcbec40671be1200c14e86094f544654b1ac8bd61cdca30df0f0f4cd4d13  /tmp/v168.b64' | sha256sum -c -
+          base64 -d /tmp/v168.b64 > /tmp/v168.tgz
+          echo 'bac5c762224e7b66adb31ff30fa004891641f723fadd2af79585de5caa3fe993  /tmp/v168.tgz' | sha256sum -c -
+          tar -xzf /tmp/v168.tgz -C .
+          echo '974edba45370c4cd3cf06314abdd401ee6e5dfe37249ab6d1174de460b47b4f3  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
+          echo 'a680a12964f4d599df6b9e905c794eecd05cea0ec3ef1434d7475e7ae66e5b1c  assets/scenes/map-detail-hd.avif' | sha256sum -c -
+          echo 'b9647d2c3171c9d911ccae574168eeb9e5b51964dab197f80853c6b229792cfc  assets/items/compass.webp' | sha256sum -c -
+          echo 'a60209e7c1da4fcf4ad3bc589e0ecd48eb6ec802951c51244e0128438b80030e  assets/items/flashlight.webp' | sha256sum -c -
+      - name: Commit assets and remove temporary import machinery
+        run: |
+          rm -rf assets/import-v168 assets/import-v167-final3
+          rm -f .github/workflows/import-v168.yml .github/workflows/import-v167-final3.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Import V168 map and inventory assets [skip ci]'
+          git push
