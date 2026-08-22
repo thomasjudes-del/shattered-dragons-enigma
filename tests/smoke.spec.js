@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 async function boot(page) {
-  await page.goto('/?v=165', { waitUntil: 'domcontentloaded' });
+  await page.goto('?v=165', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
   await expect(page.locator('#errorBox')).toBeHidden();
   await expect(page.locator('#scene')).toBeVisible();
