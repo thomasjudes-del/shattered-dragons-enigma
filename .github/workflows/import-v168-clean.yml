@@ -1,0 +1,36 @@
+name: Import V168 assets
+
+on:
+  push:
+    branches: [v168-final-clean]
+    paths: ['assets/import-v168-clean/READY']
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify V168 assets
+        run: |
+          mkdir -p assets/scenes assets/items
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/scenes/map-table-base-hd.avif' -o assets/scenes/map-table-base-hd.avif
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/scenes/map-detail-hd.avif' -o assets/scenes/map-detail-hd.avif
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/items/compass.webp' -o assets/items/compass.webp
+          curl -fL --retry 3 'https://sde-v168-assets.vercel.app/assets/items/flashlight.webp' -o assets/items/flashlight.webp
+          echo '1488653ea11dc7f662729454d0ffc645a5c6fc27b0757b7f522f70b84182cdf7  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
+          echo '34ae9ad2ad000e123749edf7781c699f7e6d807833443b4136876346b64e2bf7  assets/scenes/map-detail-hd.avif' | sha256sum -c -
+          echo '06d583c848f83a6efa1d5947355c46bf26122f14a0374e5b57e348b3d19c51b6  assets/items/compass.webp' | sha256sum -c -
+          echo '172d585526bbacb6be7beb68bd075b678902eb4d8968d5c568f1191fcc0dfa08  assets/items/flashlight.webp' | sha256sum -c -
+      - name: Commit verified assets and clean temporary import files
+        run: |
+          rm -rf assets/import-v168-clean assets/import-v167-final3
+          rm -f .github/workflows/import-v168-clean.yml .github/workflows/import-v167-final3.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Import verified V168 interaction assets [skip ci]'
+          git push

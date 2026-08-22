@@ -1,73 +1,78 @@
 import { test, expect } from '@playwright/test';
 
-async function boot(page) {
-  await page.goto('?v=165', { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true', { timeout: 20_000 });
-  await expect(page.locator('#errorBox')).toBeHidden();
-  await expect(page.locator('#scene')).toBeVisible();
+const hotspot = id => `.hotspot[data-hotspot-id="${id}"]`;
+
+async function waitForScene(page, id) {
+  await expect(page.locator('#game')).toHaveAttribute('data-scene', id);
 }
 
 async function goToMap(page) {
-  await page.locator('[data-hotspot-id="camp-next"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'team');
-  await page.locator('[data-hotspot-id="team-next"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
+  await page.locator(hotspot('camp-next')).click();
+  await waitForScene(page, 'team');
+  await page.locator(hotspot('team-next')).click();
+  await waitForScene(page, 'map');
 }
 
-test('navigation uses object-specific hotspots on the map table', async ({ page }) => {
-  await boot(page);
+test('V168 object pickups, map inspection and reset', async ({ page }) => {
+  await page.goto('/?v=168&reset=1');
+  await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.inventory-icon')).toHaveCount(0);
+
   await goToMap(page);
+  await expect(page.locator('#scene')).toHaveAttribute('src', /map-table-base-hd\.avif/);
+  await expect(page.locator('.scene-prop-compass')).toHaveCount(1);
+  await expect(page.locator('.scene-prop-flashlight')).toHaveCount(1);
+  await expect(page.locator(hotspot('compass'))).toHaveCount(1);
+  await expect(page.locator(hotspot('flashlight'))).toHaveCount(1);
 
-  await expect(page.locator('[data-hotspot-id="map-paper"]')).toBeVisible();
-  await expect(page.locator('[data-hotspot-id="flashlight"]')).toBeVisible();
-  await expect(page.locator('[data-hotspot-id="compass"]')).toBeVisible();
+  const stage = await page.locator('.stage').boundingBox();
+  if (!stage) throw new Error('Stage has no bounding box');
+  await page.mouse.click(stage.x + stage.width * 0.74, stage.y + stage.height * 0.34);
+  await waitForScene(page, 'map');
 
-  const stage = page.locator('.stage');
-  const box = await stage.boundingBox();
-  if (!box) throw new Error('Stage has no bounding box');
+  await page.locator(hotspot('compass')).click();
+  await expect(page.locator('.scene-prop-compass')).toHaveCount(0);
+  await expect(page.locator(hotspot('compass'))).toHaveCount(0);
+  await expect(page.locator('.inventory-icon')).toHaveCount(1);
+  await expect(page.locator('.inventory-slot').first()).toHaveAttribute('aria-label', 'Compass');
 
-  // The cup is above the map hotspot. Clicking it must not navigate.
-  await page.mouse.click(box.x + box.width * 0.80, box.y + box.height * 0.35);
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
-
-  await page.locator('[data-hotspot-id="map-paper"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map-detail');
-  await expect(page.locator('#scene')).toHaveCSS('transform', /matrix/);
-
-  await page.locator('[data-hotspot-id="route-mark"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'entrance');
-  await page.locator('[data-hotspot-id="entrance-next"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'lab');
-});
-
-test('flashlight and compass are collected into the satchel', async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('sde-inventory-v1'));
-  await boot(page);
+  await page.reload();
+  await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.inventory-icon')).toHaveCount(1);
   await goToMap(page);
+  await expect(page.locator('.scene-prop-compass')).toHaveCount(0);
+  await expect(page.locator(hotspot('compass'))).toHaveCount(0);
+  await expect(page.locator('.scene-prop-flashlight')).toHaveCount(1);
+  await expect(page.locator(hotspot('flashlight'))).toHaveCount(1);
 
-  await page.locator('[data-hotspot-id="flashlight"]').click();
-  await expect(page.locator('#toast')).toContainText('Flashlight added to satchel.');
+  await page.locator(hotspot('flashlight')).click();
+  await expect(page.locator('.scene-prop-flashlight')).toHaveCount(0);
+  await expect(page.locator(hotspot('flashlight'))).toHaveCount(0);
+  await expect(page.locator('.inventory-icon')).toHaveCount(2);
 
-  await page.locator('[data-hotspot-id="compass"]').click();
-  await expect(page.locator('#toast')).toContainText('Compass added to satchel.');
+  await page.locator(hotspot('map-paper')).click();
+  await waitForScene(page, 'map-detail');
+  await expect(page.locator('#scene')).toHaveAttribute('src', /map-detail-hd\.avif/);
+  expect(await page.locator('#scene').evaluate(el => el.style.transform)).toBe('none');
 
-  await page.locator('#satchel').click();
-  await expect(page.locator('#inventory')).toHaveClass(/open/);
-  await expect(page.locator('#inventory [aria-label="Flashlight"]')).toHaveCount(1);
-  await expect(page.locator('#inventory [aria-label="Compass"]')).toHaveCount(1);
-
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sde-inventory-v1') || '[]'));
-  expect(saved).toEqual(['flashlight', 'compass']);
-});
-
-test('back navigation remains linear through the new map detail scene', async ({ page }) => {
-  await boot(page);
-  await goToMap(page);
-  await page.locator('[data-hotspot-id="map-paper"]').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map-detail');
-
+  await page.locator(hotspot('route-mark')).click();
+  await waitForScene(page, 'entrance');
+  await page.locator(hotspot('entrance-next')).click();
+  await waitForScene(page, 'lab');
   await page.locator('#back').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'map');
-  await page.locator('#back').click();
-  await expect(page.locator('#game')).toHaveAttribute('data-scene', 'team');
+  await waitForScene(page, 'entrance');
+
+  await page.goto('/?v=168&reset=1');
+  await expect(page.locator('#game')).toHaveAttribute('data-ready', 'true');
+  await expect(page.locator('.inventory-icon')).toHaveCount(0);
+  const storage = await page.evaluate(() => ({
+    v1: localStorage.getItem('sde-inventory-v1'),
+    v2: localStorage.getItem('sde-inventory-v2')
+  }));
+  expect(storage.v1).toBeNull();
+  expect(storage.v2).toBeNull();
+
+  await goToMap(page);
+  await expect(page.locator('.scene-prop-compass')).toHaveCount(1);
+  await expect(page.locator('.scene-prop-flashlight')).toHaveCount(1);
 });
