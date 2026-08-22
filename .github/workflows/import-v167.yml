@@ -1,0 +1,30 @@
+name: Import V167 assets
+
+on:
+  push:
+    branches: [v167-map-state-assets]
+    paths:
+      - 'assets/import-v167/READY'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rebuild V167 bundle
+        run: |
+          cat assets/import-v167/part*.b64 > /tmp/v167.b64
+          base64 -d /tmp/v167.b64 > /tmp/v167.tgz
+          tar -xzf /tmp/v167.tgz -C .
+          rm -rf assets/import-v167
+          rm -f .github/workflows/import-v167.yml
+      - name: Commit V167 implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Implement map state variants and real inventory assets'
+          git push
