@@ -1,76 +1,99 @@
+const VERSION = '168';
+const STORAGE_KEY = 'sde-inventory-v2';
+
+function applyRequestedReset() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('reset') !== '1') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('sde-inventory-v1');
+  } catch {}
+  url.searchParams.delete('reset');
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+applyRequestedReset();
+
 const scenes = [
   {
-    id:'camp',
-    src:'./assets/scenes/camp-hd.avif?v=162',
-    pos:'center center',
-    hint:'The biodiversity survey camp is the last normal place on the route.',
-    hotspots:[
-      { id:'camp-next', action:'goto', target:'team', area:[52,18,38,70], label:'Follow the expedition route' }
+    id: 'camp',
+    src: `./assets/scenes/camp-hd.avif?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'The biodiversity survey camp is the last normal place on the route.',
+    hotspots: [
+      { id: 'camp-next', action: 'goto', target: 'team', area: [52, 18, 38, 70], label: 'Follow the expedition route' }
     ]
   },
   {
-    id:'team',
-    src:'./assets/scenes/team-hd.png?v=164',
-    pos:'center center',
-    hint:'The team found a route that should not be here.',
-    hotspots:[
-      { id:'team-next', action:'goto', target:'map', area:[34,18,36,68], label:'Examine the field table' }
+    id: 'team',
+    src: `./assets/scenes/team-hd.png?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'The team found a route that should not be here.',
+    hotspots: [
+      { id: 'team-next', action: 'goto', target: 'map', area: [34, 18, 36, 68], label: 'Examine the field table' }
     ]
   },
   {
-    id:'map',
-    src:'./assets/scenes/map-hd.png?v=164',
-    pos:'center center',
-    hint:'The map, flashlight and compass can each be used separately.',
-    hotspots:[
-      { id:'map-paper', action:'goto', target:'map-detail', area:[27,43,66,41], label:'Examine the map', z:2 },
-      { id:'flashlight', action:'collect', item:'flashlight', area:[0,74,40,17], label:'Take the flashlight', z:4 },
-      { id:'compass', action:'collect', item:'compass', area:[2,64,25,15], label:'Take the compass', z:4 }
+    id: 'map',
+    src: `./assets/scenes/map-table-base-hd.avif?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'The map can be inspected. Useful expedition gear can be packed.',
+    hotspots: [
+      { id: 'map-paper', action: 'goto', target: 'map-detail', area: [20, 42, 68, 38], label: 'Examine the map', z: 2 },
+      { id: 'compass', action: 'collect', item: 'compass', area: [1, 65, 27, 19], label: 'Take the compass', z: 5 },
+      { id: 'flashlight', action: 'collect', item: 'flashlight', area: [0, 78, 43, 18], label: 'Take the flashlight', z: 5 }
     ]
   },
   {
-    id:'map-detail',
-    src:'./assets/scenes/map-hd.png?v=164',
-    pos:'center center',
-    zoom:2,
-    origin:'60% 64%',
-    hint:'The red X marks the route beyond the biodiversity survey area.',
-    hotspots:[
-      { id:'route-mark', action:'goto', target:'entrance', area:[56,45,16,14], label:'Follow the marked route' }
+    id: 'map-detail',
+    src: `./assets/scenes/map-detail-hd.avif?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'The red X marks a route beyond the biodiversity survey area.',
+    hotspots: [
+      { id: 'route-mark', action: 'goto', target: 'entrance', area: [54, 43, 18, 16], label: 'Follow the marked route', z: 3 }
     ]
   },
   {
-    id:'entrance',
-    src:'./assets/scenes/entrance-hd.png?v=164',
-    pos:'center center',
-    hint:'The buried entrance is the only obvious way forward.',
-    hotspots:[
-      { id:'entrance-next', action:'goto', target:'lab', area:[34,30,34,50], label:'Enter the buried structure' }
+    id: 'entrance',
+    src: `./assets/scenes/entrance-hd.png?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'The buried entrance is the only obvious way forward.',
+    hotspots: [
+      { id: 'entrance-next', action: 'goto', target: 'lab', area: [34, 30, 34, 50], label: 'Enter the buried structure' }
     ]
   },
   {
-    id:'lab',
-    src:'./assets/scenes/lab-hd.png?v=164',
-    pos:'center center',
-    hint:'End of the navigation V0.',
-    hotspots:[]
+    id: 'lab',
+    src: `./assets/scenes/lab-hd.png?v=${VERSION}`,
+    pos: 'center center',
+    hint: 'End of the navigation V0.',
+    hotspots: []
   }
 ];
 
 const ITEM_DEFS = {
-  flashlight: { label:'Flashlight', className:'item-flashlight' },
-  compass: { label:'Compass', className:'item-compass' }
+  compass: {
+    label: 'Compass',
+    iconSrc: `./assets/items/compass.webp?v=${VERSION}`,
+    prop: { left: '0.5%', top: '64.5%', width: '29%', transform: 'rotate(-5deg)' }
+  },
+  flashlight: {
+    label: 'Flashlight',
+    iconSrc: `./assets/items/flashlight.webp?v=${VERSION}`,
+    prop: { left: '-5%', top: '77%', width: '47%', transform: 'rotate(-16deg)' }
+  }
 };
 
 const sceneIndex = new Map(scenes.map((scene, i) => [scene.id, i]));
 const game = document.getElementById('game');
 const image = document.getElementById('scene');
+const sceneProps = document.getElementById('sceneProps');
 const hotspots = document.getElementById('hotspots');
 const back = document.getElementById('back');
 const hint = document.getElementById('hint');
 const satchel = document.getElementById('satchel');
 const inventory = document.getElementById('inventory');
-const inventorySlots = [...inventory.querySelectorAll('button')];
+const inventorySlots = [...inventory.querySelectorAll('.inventory-slot')];
 const toast = document.getElementById('toast');
 const echoes = document.getElementById('echoes');
 const loading = document.getElementById('loading');
@@ -84,7 +107,7 @@ const collected = new Set(loadInventory());
 
 function loadInventory() {
   try {
-    const saved = JSON.parse(localStorage.getItem('sde-inventory-v1') || '[]');
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     return Array.isArray(saved) ? saved.filter(id => ITEM_DEFS[id]) : [];
   } catch {
     return [];
@@ -93,9 +116,17 @@ function loadInventory() {
 
 function saveInventory() {
   try {
-    localStorage.setItem('sde-inventory-v1', JSON.stringify([...collected]));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...collected]));
   } catch {}
 }
+
+window.resetEnigma = function resetEnigma() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('sde-inventory-v1');
+  } catch {}
+  window.location.href = `./?v=${VERSION}`;
+};
 
 function preload(src) {
   return new Promise((resolve, reject) => {
@@ -112,7 +143,7 @@ function preload(src) {
   });
 }
 
-function showToast(message, duration = 2200) {
+function showToast(message, duration = 1900) {
   clearTimeout(timer);
   toast.textContent = message;
   toast.classList.add('show');
@@ -131,25 +162,49 @@ function renderInventory() {
       return;
     }
     const def = ITEM_DEFS[id];
-    slot.classList.add('has-item', def.className);
+    slot.classList.add('has-item');
     slot.setAttribute('aria-label', def.label);
     slot.title = def.label;
-    const icon = document.createElement('span');
-    icon.setAttribute('aria-hidden', 'true');
+    const icon = document.createElement('img');
+    icon.className = 'inventory-icon';
+    icon.src = def.iconSrc;
+    icon.alt = '';
+    icon.draggable = false;
     slot.appendChild(icon);
   });
 }
 
+function renderMapProps(scene) {
+  sceneProps.replaceChildren();
+  if (scene.id !== 'map') return;
+  for (const id of ['compass', 'flashlight']) {
+    if (collected.has(id)) continue;
+    const def = ITEM_DEFS[id];
+    const prop = document.createElement('img');
+    prop.className = `scene-prop scene-prop-${id}`;
+    prop.src = def.iconSrc;
+    prop.alt = '';
+    prop.draggable = false;
+    prop.setAttribute('aria-hidden', 'true');
+    Object.assign(prop.style, def.prop);
+    sceneProps.appendChild(prop);
+  }
+}
+
+function getSceneHotspots(scene) {
+  if (scene.id !== 'map') return scene.hotspots || [];
+  return (scene.hotspots || []).filter(spec => spec.action !== 'collect' || !collected.has(spec.item));
+}
+
 function collectItem(id) {
   const def = ITEM_DEFS[id];
-  if (!def) return;
-  if (collected.has(id)) {
-    showToast(`${def.label} already packed.`);
-    return;
-  }
+  if (!def || collected.has(id)) return;
   collected.add(id);
   saveInventory();
   renderInventory();
+  const scene = scenes[index];
+  renderMapProps(scene);
+  setHotspots(scene);
   showToast(`${def.label} added to satchel.`);
 }
 
@@ -166,7 +221,7 @@ function activateHotspot(spec, event) {
 
 function setHotspots(scene) {
   hotspots.replaceChildren();
-  for (const spec of scene.hotspots || []) {
+  for (const spec of getSceneHotspots(scene)) {
     const [left, top, width, height] = spec.area;
     const button = document.createElement('button');
     button.type = 'button';
@@ -190,16 +245,17 @@ function render(i) {
   const scene = scenes[i];
   game.dataset.scene = scene.id;
   image.style.objectPosition = scene.pos || 'center center';
-  image.style.transform = scene.zoom ? `scale(${scene.zoom})` : 'none';
-  image.style.transformOrigin = scene.origin || 'center center';
+  image.style.transform = 'none';
+  image.style.transformOrigin = 'center center';
   back.hidden = i === 0;
+  renderMapProps(scene);
   setHotspots(scene);
 }
 
 function closeInventory() {
   inventory.classList.remove('open');
-  inventory.setAttribute('aria-hidden','true');
-  satchel.setAttribute('aria-expanded','false');
+  inventory.setAttribute('aria-hidden', 'true');
+  satchel.setAttribute('aria-expanded', 'false');
 }
 
 async function go(i) {
@@ -217,6 +273,7 @@ async function go(i) {
       busy = false;
     }, 80);
   } catch (err) {
+    console.error(err);
     busy = false;
     showError('Scene failed to load.');
   }
@@ -233,7 +290,7 @@ function toggleInventory() {
   satchel.setAttribute('aria-expanded', String(open));
 }
 
-function echo(x,y) {
+function echo(x, y) {
   const ring = document.createElement('span');
   ring.className = 'echo';
   ring.style.left = `${x}px`;
@@ -248,13 +305,15 @@ function showError(message) {
   setTimeout(() => { errorBox.hidden = true; }, 2600);
 }
 
-back.addEventListener('click', () => go(index-1));
+back.addEventListener('click', () => go(index - 1));
 hint.addEventListener('click', showHint);
 satchel.addEventListener('click', toggleInventory);
-document.addEventListener('pointerdown', e => { if (!e.target.closest('button')) echo(e.clientX,e.clientY); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') go(index-1);
-  if (e.key === 'Escape') closeInventory();
+document.addEventListener('pointerdown', event => {
+  if (!event.target.closest('button')) echo(event.clientX, event.clientY);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'ArrowLeft') go(index - 1);
+  if (event.key === 'Escape') closeInventory();
 });
 
 async function boot() {
@@ -265,10 +324,16 @@ async function boot() {
     render(0);
     game.dataset.ready = 'true';
     loading.hidden = true;
-    Promise.allSettled(scenes.slice(1).map(s => preload(s.src)));
+    const preloadList = [
+      ...scenes.slice(1).map(scene => scene.src),
+      ...Object.values(ITEM_DEFS).map(item => item.iconSrc)
+    ];
+    Promise.allSettled(preloadList.map(preload));
   } catch (err) {
+    console.error(err);
     loading.hidden = true;
     showError('Initial scene failed to load.');
   }
 }
+
 boot();
