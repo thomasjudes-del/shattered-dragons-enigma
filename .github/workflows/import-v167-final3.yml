@@ -1,24 +1,47 @@
 name: Import V167 final3 assets
+
 on:
   push:
     branches: [v167-final3]
     paths: ['assets/import-v167-final3/READY']
+
 permissions:
   contents: write
+
 jobs:
   import:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          cat assets/import-v167-final3/bin*.b64 > /tmp/v167.b64
+      - name: Reconstruct and verify exact V167 asset bundle
+        run: |
+          cat assets/import-v167-final3/bin{00..19}.b64 \
+              assets/import-v167-final3/fix19-{00..07}.b64 \
+              assets/import-v167-final3/bin{20..23}.b64 > /tmp/v167.b64
+          test "$(wc -c < /tmp/v167.b64)" -eq 128428
+          echo '8ff1f913899ef3c1d55a2101cc10cfa7b3e163a69c04735efc51e70161f241e6  /tmp/v167.b64' | sha256sum -c -
           base64 -d /tmp/v167.b64 > /tmp/v167.tgz
           tar -xzf /tmp/v167.tgz -C .
+          echo 'fb67daf3ca7bdc414c457a51eecd86113a2a0d7d13b935bb47b17b1f2d87ad4a  assets/items/compass.webp' | sha256sum -c -
+          echo '89c2a80fb383e2a349105ac74e9d21f9e6a240a9491e42ce678c5d0726894663  assets/items/flashlight.webp' | sha256sum -c -
+          echo '6d3a4cf2a452428f02c23f3d60bff55dd7749e18b1ff56207795f387f9fa9e3e  assets/scenes/map-detail-hd.avif' | sha256sum -c -
+          echo 'b2303194774e138c99164f84e210ec85e798a313b7c4b5bd064b84adfa2a0472  assets/scenes/map-table-base-hd.avif' | sha256sum -c -
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test V167 locally before committing assets
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npm run test:e2e -- --project=desktop-chromium
+      - name: Commit verified assets
+        run: |
           rm -rf assets/import-v167-final3
           rm -f .github/workflows/import-v167-final3.yml
-      - run: |
+          rm -f .github/workflows/apply-v167.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Add V167 map and inventory assets'
+          git commit -m 'Import verified V167 interaction assets [skip ci]'
           git push
