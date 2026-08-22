@@ -24,19 +24,25 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Test current code locally
         run: npm run test:e2e -- --project=desktop-chromium
-      - name: Wait for GitHub Pages V165
+      - name: Wait for GitHub Pages V167
         if: ${{ github.event_name == 'push' }}
         run: |
           for i in $(seq 1 30); do
-            INDEX=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/?v=165" || true)
-            APP=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/app.js?v=165" || true)
-            if echo "$INDEX" | grep -q 'app.js?v=165' && echo "$APP" | grep -q "id:'map-detail'"; then
-              echo "GitHub Pages V165 is live"
+            INDEX=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/?v=167" || true)
+            APP=$(curl -fsS "https://thomasjudes-del.github.io/shattered-dragons-enigma/app.js?v=167" || true)
+            if echo "$INDEX" | grep -q 'app.js?v=167' \
+              && echo "$APP" | grep -q 'map-table-base-hd.avif' \
+              && echo "$APP" | grep -q 'map-detail-hd.avif' \
+              && curl -fsS -o /dev/null "https://thomasjudes-del.github.io/shattered-dragons-enigma/assets/scenes/map-table-base-hd.avif?v=167" \
+              && curl -fsS -o /dev/null "https://thomasjudes-del.github.io/shattered-dragons-enigma/assets/scenes/map-detail-hd.avif?v=167" \
+              && curl -fsS -o /dev/null "https://thomasjudes-del.github.io/shattered-dragons-enigma/assets/items/compass.webp?v=167" \
+              && curl -fsS -o /dev/null "https://thomasjudes-del.github.io/shattered-dragons-enigma/assets/items/flashlight.webp?v=167"; then
+              echo "GitHub Pages V167 is live with all interaction assets"
               exit 0
             fi
             sleep 5
           done
-          echo "GitHub Pages V165 did not become ready in time"
+          echo "GitHub Pages V167 did not become ready in time"
           exit 1
       - name: Test real GitHub Pages interactions
         if: ${{ github.event_name == 'push' }}
@@ -46,7 +52,7 @@ jobs:
       - name: Record verified public interaction build
         if: ${{ github.event_name == 'push' }}
         run: |
-          printf 'GitHub Pages public interaction verification succeeded.\nversion: V165\nsource_commit: %s\nchecks: map-only navigation; cup inert; flashlight pickup; compass pickup; map detail; entrance; lab; back navigation\n' "$GITHUB_SHA" > PUBLIC_INTERACTIONS_VERIFIED.txt
+          printf 'GitHub Pages public interaction verification succeeded.\nversion: V167\nsource_commit: %s\nchecks: dedicated HD map scene; cup inert; flashlight and compass pickups disappear from table; real item images in satchel; persistence; entrance; lab; back navigation\n' "$GITHUB_SHA" > PUBLIC_INTERACTIONS_VERIFIED.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add PUBLIC_INTERACTIONS_VERIFIED.txt
