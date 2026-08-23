@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Media Pipeline Benchmark</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d10;--panel:#141820;--line:#2a313b;--text:#f1f3f5;--muted:#9aa4af;--ok:#7bd88f;--warn:#f1bf67}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:1180px;margin:auto;padding:22px}h1{font-size:24px;margin:0 0 6px}.sub{color:var(--muted);margin-bottom:18px}.status{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 24px}.pill{border:1px solid var(--line);background:#11151a;border-radius:999px;padding:7px 10px}.ok{color:var(--ok)}.warn{color:var(--warn)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.col{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}.col h2{font-size:16px;margin:0 0 12px}.card{border-top:1px solid var(--line);padding:14px 0}.card:first-of-type{border-top:0;padding-top:0}.name{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}.name span:last-child{color:var(--muted);font-size:12px}.imgbox{background:#050607;border-radius:12px;overflow:hidden;aspect-ratio:941/1672}.imgbox img{width:100%;height:100%;display:block;object-fit:contain}.meta{margin-top:7px;color:var(--muted);font-size:12px;word-break:break-all}.note{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:14px;background:#11151a}.note strong{color:var(--warn)}@media(max-width:780px){.grid{grid-template-columns:1fr}.wrap{padding:14px}}
+</style>
+</head>
+<body><main class="wrap">
+<h1>Media Pipeline Benchmark</h1>
+<div class="sub">Contrôle direct GitHub vs copie Cloudinary. Même source, même scène, même rendu attendu.</div>
+<div class="status"><div class="pill ok">Cloudinary: 5/5 uploadés</div><div class="pill ok">GitHub source: 5/5 disponibles</div><div class="pill warn">Cloudflare R2: écriture non exposée à cette session</div></div>
+<div class="grid">
+<section class="col"><h2>GitHub source</h2>
+<div class="card"><div class="name"><b>Camp</b><span>camp-hd.avif</span></div><div class="imgbox"><img src="../../assets/scenes/camp-hd.avif" alt="Camp GitHub"></div></div>
+<div class="card"><div class="name"><b>Team</b><span>team-hd.png</span></div><div class="imgbox"><img src="../../assets/scenes/team-hd.png" alt="Team GitHub"></div></div>
+<div class="card"><div class="name"><b>Map</b><span>map-hd.png</span></div><div class="imgbox"><img src="../../assets/scenes/map-hd.png" alt="Map GitHub"></div></div>
+<div class="card"><div class="name"><b>Entrance</b><span>entrance-hd.png</span></div><div class="imgbox"><img src="../../assets/scenes/entrance-hd.png" alt="Entrance GitHub"></div></div>
+<div class="card"><div class="name"><b>Lab</b><span>lab-hd.png</span></div><div class="imgbox"><img src="../../assets/scenes/lab-hd.png" alt="Lab GitHub"></div></div>
+</section>
+<section class="col"><h2>Cloudinary</h2>
+<div class="card"><div class="name"><b>Camp</b><span>941 × 1672</span></div><div class="imgbox"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787473311/camp.avif" alt="Camp Cloudinary"></div><div class="meta">99,955 bytes</div></div>
+<div class="card"><div class="name"><b>Team</b><span>941 × 1672</span></div><div class="imgbox"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787473320/team.png" alt="Team Cloudinary"></div><div class="meta">3,786,576 bytes</div></div>
+<div class="card"><div class="name"><b>Map</b><span>941 × 1672</span></div><div class="imgbox"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787473328/map.png" alt="Map Cloudinary"></div><div class="meta">3,054,906 bytes</div></div>
+<div class="card"><div class="name"><b>Entrance</b><span>941 × 1672</span></div><div class="imgbox"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787473334/entrance.png" alt="Entrance Cloudinary"></div><div class="meta">2,991,603 bytes</div></div>
+<div class="card"><div class="name"><b>Lab</b><span>941 × 1672</span></div><div class="imgbox"><img src="https://res.cloudinary.com/u6hwxp4g/image/upload/v1787473343/lab.png" alt="Lab Cloudinary"></div><div class="meta">2,444,053 bytes</div></div>
+</section></div>
+<div class="note"><strong>But du benchmark:</strong> vérifier qu’un provider média peut recevoir une scène HD sans dégrader la source, fournir une URL publique stable et être intégré sans toucher au gameplay. Le test R2 sera ajouté ici dès qu’une action d’écriture R2 authentifiée est exposée à la session.</div>
+</main></body></html>
