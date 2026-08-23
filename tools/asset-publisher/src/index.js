@@ -2,8 +2,8 @@ import { createMcpHandler } from "agents/mcp/server";
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
-function createServer(env) {
-  const server = new McpServer({ name: "Confluence Asset Publisher", version: "1.1.0" });
+function createServer(env, origin) {
+  const server = new McpServer({ name: "Confluence Asset Publisher", version: "1.1.1" });
 
   server.registerTool(
     "publish_asset",
@@ -30,6 +30,7 @@ function createServer(env) {
 
       const digest = await crypto.subtle.digest("SHA-256", body);
       const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      const path = `/assets/${encodeURI(key)}`;
 
       await env.ASSETS.put(key, body, {
         httpMetadata: { contentType },
@@ -45,7 +46,8 @@ function createServer(env) {
             bytes: body.byteLength,
             sha256,
             contentType,
-            path: `/assets/${encodeURI(key)}`,
+            path,
+            url: `${origin}${path}`,
           }),
         }],
       };
@@ -72,9 +74,9 @@ export default {
     }
 
     if (url.pathname === "/mcp") {
-      return createMcpHandler(() => createServer(env))(request, env, ctx);
+      return createMcpHandler(() => createServer(env, url.origin))(request, env, ctx);
     }
 
-    return Response.json({ ok: true, service: "Confluence Asset Publisher", version: "1.1.0", mcp: "/mcp" });
+    return Response.json({ ok: true, service: "Confluence Asset Publisher", version: "1.1.1", mcp: "/mcp" });
   },
 };
