@@ -1,55 +1,67 @@
-const ONE_SHOT_KEY = 'shattered-dragons/dragon-stasis-chamber.png';
-const ONE_SHOT_SHA256 = '4bfede78cb6560af117163dde4b0550941f1420caaededa95ab47d8c08d7afbc';
+import { createMcpHandler } from "agents/mcp/server";
+import { McpServer } from "@modelcontextprotocol/server";
+import { z } from "zod";
+
+function decodeBase64(value) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function createServer(env) {
+  const server = new McpServer({ name: "Confluence Asset Publisher", version: "1.0.0" });
+
+  server.registerTool(
+    "publish_asset",
+    {
+      description: "Publish an image or other binary asset to the Confluence of Minds R2 bucket and return its public Worker URL.",
+      inputSchema: {
+        key: z.string().min(1).describe("R2 object key, for example shattered-dragons/scene.jpg"),
+        base64: z.string().min(1).describe("Complete file bytes encoded as base64"),
+        contentType: z.string().default("application/octet-stream").describe("MIME type, for example image/jpeg"),
+      },
+    },
+    async ({ key, base64, contentType }) => {
+      if (key.includes("..") || key.startsWith("/")) throw new Error("Invalid key");
+      const bytes = decodeBase64(base64);
+      if (bytes.byteLength === 0) throw new Error("Empty asset");
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      await env.ASSETS.put(key, bytes, {
+        httpMetadata: { contentType },
+        customMetadata: { sha256 },
+      });
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ ok: true, key, bytes: bytes.byteLength, sha256, path: `/assets/${encodeURI(key)}` }),
+        }],
+      };
+    },
+  );
+  return server;
+}
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    if (request.method === 'GET' && url.pathname.startsWith('/assets/')) {
-      const key = decodeURIComponent(url.pathname.slice('/assets/'.length));
+    if (request.method === "GET" && url.pathname.startsWith("/assets/")) {
+      const key = decodeURIComponent(url.pathname.slice("/assets/".length));
       const object = await env.ASSETS.get(key);
-      if (!object) return new Response('Not found', { status: 404 });
+      if (!object) return new Response("Not found", { status: 404 });
       const headers = new Headers();
       object.writeHttpMetadata(headers);
-      headers.set('etag', object.httpEtag);
-      headers.set('cache-control', 'public, max-age=31536000, immutable');
+      headers.set("etag", object.httpEtag);
+      headers.set("cache-control", "public, max-age=31536000, immutable");
       return new Response(object.body, { headers });
     }
 
-    if (request.method !== 'PUT' || !url.pathname.startsWith('/publish/')) {
-      return Response.json({ ok:false, error:'Use PUT /publish/<key> or GET /assets/<key>' }, { status:405 });
+    if (url.pathname === "/mcp") {
+      return createMcpHandler(() => createServer(env))(request, env, ctx);
     }
 
-    const key = decodeURIComponent(url.pathname.slice('/publish/'.length));
-    if (!key || key.includes('..')) return Response.json({ok:false,error:'Invalid key'},{status:400});
-
-    const contentType = request.headers.get('content-type') || 'application/octet-stream';
-    const body = await request.arrayBuffer();
-    if (body.byteLength < 100000) {
-      return Response.json({ok:false,error:'Rejected: suspiciously small asset',bytes:body.byteLength},{status:422});
-    }
-
-    const digest = await crypto.subtle.digest('SHA-256', body);
-    const sha256 = [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
-
-    const token = request.headers.get('authorization');
-    const tokenAuthorized = !!env.PUBLISH_TOKEN && token === `Bearer ${env.PUBLISH_TOKEN}`;
-    const oneShotAuthorized = key === ONE_SHOT_KEY && sha256 === ONE_SHOT_SHA256;
-    if (!tokenAuthorized && !oneShotAuthorized) {
-      return Response.json({ ok:false, error:'Unauthorized or hash mismatch' }, { status:401 });
-    }
-
-    await env.ASSETS.put(key, body, {
-      httpMetadata: { contentType },
-      customMetadata: { sha256 }
-    });
-
-    return Response.json({
-      ok:true,
-      key,
-      bytes:body.byteLength,
-      sha256,
-      url:`${url.origin}/assets/${encodeURI(key)}`
-    });
-  }
+    return Response.json({ ok: true, service: "Confluence Asset Publisher", mcp: "/mcp" });
+  },
 };
