@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "chatgpt-asset-publisher",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-23",
+  "r2_buckets": [
+    { "binding": "ASSETS", "bucket_name": "chatgpt-game-assets" }
+  ]
+}
