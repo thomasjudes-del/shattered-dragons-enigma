@@ -11,6 +11,10 @@
 .modal-layer.panel-view .modal-card{width:min(92vw,470px);max-height:92dvh;padding:0;border:1px solid rgba(188,160,105,.24);border-radius:10px;background:#050504;overflow:hidden}
 .modal-layer.photo-view .modal-close,.modal-layer.panel-view .modal-close{z-index:20;right:10px;top:10px;background:rgba(0,0,0,.76);border-color:rgba(232,211,166,.5);color:#f0dfb7}
 
+/* Navigation rule: inspection/dead-end views always return with the same bottom-left Back control. */
+.modal-close{display:none!important}
+.stage:has(.modal-layer:not([hidden])) .back{display:block!important;z-index:90}
+
 .photo-inspect{width:100%;height:100%;display:grid;place-items:center;background:#020202}
 .photo-inspect-image{display:block;width:100%;height:auto;max-height:92dvh;object-fit:contain}
 
