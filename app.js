@@ -1,4 +1,4 @@
-const VERSION = '169';
+const VERSION = '170';
 const STORAGE_KEY = 'sde-inventory-v2';
 const MAP_SOURCE = `./assets/scenes/map-hd.png?v=${VERSION}`;
 
@@ -84,6 +84,7 @@ const sceneProps = document.getElementById('sceneProps');
 const hotspots = document.getElementById('hotspots');
 const back = document.getElementById('back');
 const hint = document.getElementById('hint');
+const reset = document.getElementById('reset');
 const satchel = document.getElementById('satchel');
 const inventory = document.getElementById('inventory');
 const inventorySlots = [...inventory.querySelectorAll('.inventory-slot')];
@@ -118,7 +119,7 @@ window.resetEnigma = function resetEnigma() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('sde-inventory-v1');
   } catch {}
-  window.location.href = `./?v=${VERSION}`;
+  window.location.href = `./?v=${VERSION}&reset=1`;
 };
 
 function preload(src) {
@@ -304,6 +305,7 @@ function showError(message) {
 
 back.addEventListener('click', () => go(index - 1));
 hint.addEventListener('click', showHint);
+reset.addEventListener('click', window.resetEnigma);
 satchel.addEventListener('click', toggleInventory);
 document.addEventListener('pointerdown', event => {
   if (!event.target.closest('button')) echo(event.clientX, event.clientY);
