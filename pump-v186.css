@@ -1,0 +1,23 @@
+.pump-panel-v186{position:relative;width:100%;background:#080705;overflow:hidden}
+.pump-panel-v186 .pump-panel-photo{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+
+.pump-slider-control{position:absolute;z-index:10;left:var(--x);top:25.3%;transform:translateX(-50%);width:13.5%;height:31.5%;border:0;background:transparent;padding:0;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;overflow:visible}
+.pump-slider-control:active{filter:brightness(1.05)}
+.pump-slider-control:focus-visible{outline:1px solid rgba(223,193,136,.55);outline-offset:2px;border-radius:8px}
+
+.pump-slider-handle{position:absolute;z-index:3;left:50%;width:47%;height:auto;transform:translate(-50%,-10%);filter:drop-shadow(0 4px 4px rgba(0,0,0,.72));pointer-events:none;transition:top .14s cubic-bezier(.2,.8,.2,1)}
+
+.pump-engage-v186{position:absolute;z-index:12;left:50%;top:74.4%;bottom:auto;transform:translateX(-50%);width:25%;height:8.8%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:10px}
+.pump-engage-v186:active{background:radial-gradient(circle,rgba(174,56,33,.16),transparent 65%)}
+.pump-engage-v186:disabled{cursor:default;background:transparent}
+
+.pump-panel-locked .pump-slider-control{pointer-events:none}
+.pump-panel-locked .pump-slider-handle{filter:drop-shadow(0 4px 4px rgba(0,0,0,.72)) brightness(.96)}
+
+.pump-panel-v186.rejected{animation:selectorReject .44s ease}
+
+@media(max-width:700px){
+  .pump-slider-control{width:15%;top:25.1%;height:31.9%}
+  .pump-slider-handle{width:48%}
+  .pump-engage-v186{top:74.2%;width:27%;height:9.2%}
+}
