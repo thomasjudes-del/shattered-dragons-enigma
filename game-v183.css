@@ -1,0 +1,25 @@
+.satchel.item-added{animation:satchelPickup .5s ease}
+.tunnel-darkness{position:absolute;inset:0;background:rgba(0,0,0,.86);transition:background .22s ease}
+.tunnel-darkness.flashlight-on{background:radial-gradient(circle at 50% 47%,rgba(0,0,0,0) 0 18%,rgba(0,0,0,.28) 34%,rgba(0,0,0,.72) 64%,rgba(0,0,0,.92) 100%)}
+.lab-power-off{position:absolute;inset:0;background:rgba(0,0,0,.48);mix-blend-mode:multiply;pointer-events:none;transition:opacity .35s ease}
+.gauge-bank{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 6px}
+.visual-gauge{display:grid;gap:10px;justify-items:center}
+.gauge-face,.selector-face{position:relative;border-radius:50%;background:radial-gradient(circle at 50% 58%,#28251e 0 35%,#11120f 70%,#050605 100%);border:2px solid rgba(194,166,108,.38);box-shadow:inset 0 0 18px rgba(0,0,0,.8),0 4px 12px rgba(0,0,0,.35)}
+.gauge-face{width:min(22vw,96px);aspect-ratio:1}
+.gauge-tick,.selector-tick{position:absolute;left:50%;top:9%;width:2px;height:12%;background:rgba(232,214,177,.72);transform-origin:50% 340%}
+.gauge-tick.t1,.selector-tick.s1{transform:translateX(-50%) rotate(-58deg)}
+.gauge-tick.t2,.selector-tick.s2{transform:translateX(-50%) rotate(-19deg)}
+.gauge-tick.t3,.selector-tick.s3{transform:translateX(-50%) rotate(20deg)}
+.gauge-tick.t4,.selector-tick.s4{transform:translateX(-50%) rotate(58deg)}
+.gauge-needle,.selector-needle{position:absolute;left:50%;bottom:48%;width:2px;height:34%;background:#d6a75b;transform-origin:50% 100%;transform:translateX(-50%) rotate(var(--angle));box-shadow:0 0 5px rgba(223,169,83,.4)}
+.gauge-hub,.selector-hub{position:absolute;left:50%;top:52%;width:10px;height:10px;border-radius:50%;background:#b18a4f;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.8)}
+.gauge-symbol{font:700 22px/1 Georgia,serif;color:#ead6a5}
+.selector-bank{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 18px;padding:12px;border:1px solid rgba(194,166,108,.22);border-radius:12px;background:rgba(0,0,0,.18)}
+.visual-selector{display:grid;gap:8px;justify-items:center;padding:10px 4px;border:1px solid rgba(194,166,108,.2);border-radius:10px;background:linear-gradient(180deg,rgba(40,35,27,.88),rgba(9,10,8,.95));color:#ead6a5;cursor:pointer}
+.visual-selector strong{font:700 22px/1 Georgia,serif}
+.selector-face{width:min(20vw,82px);aspect-ratio:1}
+.selector-bank.rejected{animation:selectorReject .42s ease}
+.compact-action{margin-top:4px}
+@keyframes satchelPickup{0%,100%{transform:scale(1)}45%{transform:scale(1.14)}}
+@keyframes selectorReject{0%,100%{transform:translateX(0);border-color:rgba(194,166,108,.22)}25%{transform:translateX(-5px);border-color:rgba(166,77,61,.7)}75%{transform:translateX(5px);border-color:rgba(166,77,61,.7)}}
+@media(max-width:700px){.gauge-bank,.selector-bank{gap:8px}.gauge-face{width:82px}.selector-face{width:72px}.visual-selector{padding:8px 2px}}
