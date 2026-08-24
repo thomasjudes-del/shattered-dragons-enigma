@@ -1,0 +1,19 @@
+.pump-panel-v187{position:relative;width:100%;background:#080705;overflow:hidden}
+.pump-panel-v187 .pump-panel-photo{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+
+.pump-pivot-control{position:absolute;z-index:10;left:var(--x);top:24.6%;width:21%;height:43%;transform:translateX(-50%);border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:none;overflow:visible}
+.pump-pivot-control:active{filter:brightness(1.05)}
+
+.pump-pivot-handle{position:absolute;left:50%;top:0;height:100%;width:auto;max-width:none;transform:translateX(-50%) rotate(var(--angle));transform-origin:50% 78%;clip-path:polygon(31% 0,69% 0,69% 59%,57% 100%,43% 100%,31% 59%);filter:drop-shadow(0 5px 5px rgba(0,0,0,.7));transition:transform .2s cubic-bezier(.2,.8,.2,1);pointer-events:none;user-select:none;-webkit-user-drag:none}
+
+.pump-engage-v187{position:absolute;z-index:12;left:50%;bottom:11.4%;transform:translateX(-50%);width:26%;height:7.6%;border:0;background:transparent;padding:0;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pump-engage-v187:active{background:radial-gradient(circle,rgba(188,71,41,.2),transparent 64%);box-shadow:0 0 24px rgba(154,51,32,.16)}
+.pump-panel-v187.pump-panel-locked .pump-pivot-control{pointer-events:none}
+.pump-panel-v187.rejected{animation:pumpRejectV187 .42s ease}
+
+@keyframes pumpRejectV187{0%,100%{transform:translateX(0);filter:none}24%{transform:translateX(-4px);filter:brightness(.92)}72%{transform:translateX(4px);filter:brightness(.92)}}
+
+@media(max-width:700px){
+  .pump-pivot-control{width:22%;height:42.5%;top:24.8%}
+  .pump-pivot-handle{filter:drop-shadow(0 4px 4px rgba(0,0,0,.72))}
+}
