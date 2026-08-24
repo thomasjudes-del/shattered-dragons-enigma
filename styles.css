@@ -22,11 +22,13 @@ button{font:inherit}
 .back{left:max(16px,env(safe-area-inset-left));bottom:max(18px,calc(env(safe-area-inset-bottom) + 10px))}
 .back i{position:absolute;width:22px;height:22px;left:23px;top:18px;border-left:4px solid currentColor;border-bottom:4px solid currentColor;transform:rotate(45deg)}
 .satchel{position:absolute;z-index:10;right:max(10px,env(safe-area-inset-right));bottom:max(6px,calc(env(safe-area-inset-bottom) + 2px));width:86px;height:86px;padding:0;border:0;background:transparent;cursor:pointer;filter:drop-shadow(0 7px 9px rgba(0,0,0,.58))}
+.satchel.has-selection{filter:drop-shadow(0 0 8px rgba(240,225,188,.9)) drop-shadow(0 7px 9px rgba(0,0,0,.58))}
 .satchel img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .inventory{position:absolute;z-index:9;right:max(98px,calc(env(safe-area-inset-right) + 98px));bottom:max(16px,calc(env(safe-area-inset-bottom) + 10px));display:grid;grid-template-columns:repeat(5,56px);gap:6px;padding:8px;border:1px solid rgba(205,184,136,.25);border-radius:10px;background:rgba(3,5,4,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;transform:translateX(8px);pointer-events:none;transition:.12s ease}
 .inventory.open{opacity:1;transform:none;pointer-events:auto}
-.inventory-slot{position:relative;width:56px;aspect-ratio:1;border:1px solid rgba(215,196,152,.24);border-radius:6px;background:rgba(10,13,11,.58);overflow:hidden;padding:0}
-.inventory-slot.has-item{background:rgba(18,20,17,.88);border-color:rgba(215,196,152,.42)}
+.inventory-slot{position:relative;width:56px;aspect-ratio:1;border:1px solid rgba(215,196,152,.24);border-radius:6px;background:rgba(10,13,11,.58);overflow:hidden;padding:0;cursor:default}
+.inventory-slot.has-item{background:rgba(18,20,17,.88);border-color:rgba(215,196,152,.42);cursor:pointer}
+.inventory-slot.selected{border:2px solid rgba(245,226,174,.98);box-shadow:0 0 0 2px rgba(245,226,174,.18),0 0 12px rgba(245,226,174,.55)}
 .inventory-photo{position:absolute;inset:0;display:block;overflow:hidden;border-radius:5px;background:#171612}
 .inventory-crop{position:absolute;height:auto;max-width:none;pointer-events:none;filter:contrast(1.03) saturate(.9) drop-shadow(0 3px 5px rgba(0,0,0,.4))}
 .item-compass .inventory-crop{width:500%;left:-10%;top:-580%}
