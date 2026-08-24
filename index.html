@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Shattered Dragons: Enigma</title>
-  <link rel="stylesheet" href="./styles.css?v=172">
+  <link rel="stylesheet" href="./styles.css?v=173">
 </head>
 <body>
   <main id="game" class="game" data-ready="false" data-scene="camp">
@@ -17,7 +17,7 @@
       <div id="hotspots" class="hotspots" aria-label="Interactive areas"></div>
       <div class="vignette" aria-hidden="true"></div>
       <button id="hint" class="round hint" type="button" aria-label="Hint"><span aria-hidden="true"></span></button>
-      <button id="reset" class="reset" type="button" aria-label="Reset game" style="position:absolute;z-index:50;top:max(16px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));min-width:82px;height:42px;padding:0 14px;border:1px solid rgba(255,255,255,.8);border-radius:21px;background:rgba(0,0,0,.88);color:#fff;font:700 11px/1 system-ui,sans-serif;letter-spacing:.12em;box-shadow:0 4px 14px rgba(0,0,0,.5);" onclick="try{localStorage.removeItem('sde-inventory-v2');localStorage.removeItem('sde-inventory-v1')}catch(e){};window.location.href='./?v=172&reset=1'">RESET</button>
+      <button id="reset" class="reset" type="button" aria-label="Reset game" onclick="try{localStorage.removeItem('sde-inventory-v2');localStorage.removeItem('sde-inventory-v1')}catch(e){};window.location.href='./?v=173&reset=1'">RESET</button>
       <button id="back" class="round back" type="button" aria-label="Back" hidden><i aria-hidden="true"></i></button>
       <div id="inventory" class="inventory" aria-hidden="true" aria-label="Inventory">
         <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
@@ -27,7 +27,7 @@
         <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
       </div>
       <button id="satchel" class="satchel" type="button" aria-label="Open satchel" aria-expanded="false">
-        <img src="./assets/clean/satchel.webp?v=172" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/thomasjudes-del/shattered-dragons-enigma/main/assets/clean/satchel.webp?v=172'" alt="" draggable="false">
+        <img src="https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons/ui/satchel-v2.png" alt="" draggable="false">
       </button>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
       <div id="echoes" class="echoes" aria-hidden="true"></div>
@@ -35,6 +35,6 @@
       <div id="errorBox" class="error-box" role="alert" hidden></div>
     </section>
   </main>
-  <script src="./app.js?v=172" defer></script>
+  <script src="./app.js?v=173" defer></script>
 </body>
 </html>
