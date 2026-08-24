@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Shattered Dragons: Enigma</title>
-  <link rel="stylesheet" href="./styles.css?v=175">
+  <link rel="stylesheet" href="./styles.css?v=180">
 </head>
 <body>
   <main id="game" class="game" data-ready="false" data-scene="camp">
@@ -17,7 +17,7 @@
       <div id="hotspots" class="hotspots" aria-label="Interactive areas"></div>
       <div class="vignette" aria-hidden="true"></div>
       <button id="hint" class="round hint" type="button" aria-label="Hint"><span aria-hidden="true"></span></button>
-      <button id="reset" class="reset" type="button" aria-label="Reset game" onclick="try{localStorage.removeItem('sde-inventory-v2');localStorage.removeItem('sde-inventory-v1')}catch(e){};window.location.href='./?v=175&reset=1'">RESET</button>
+      <button id="reset" class="reset" type="button" aria-label="Reset game">RESET</button>
       <button id="back" class="round back" type="button" aria-label="Back" hidden><i aria-hidden="true"></i></button>
       <div id="inventory" class="inventory" aria-hidden="true" aria-label="Inventory">
         <button class="inventory-slot" type="button" aria-label="Empty slot"></button>
@@ -33,8 +33,14 @@
       <div id="echoes" class="echoes" aria-hidden="true"></div>
       <div id="loading" class="loading">Loading expedition...</div>
       <div id="errorBox" class="error-box" role="alert" hidden></div>
+      <div id="modalLayer" class="modal-layer" aria-hidden="true" hidden>
+        <article class="modal-card" role="dialog" aria-modal="true" aria-label="Game information">
+          <button id="modalClose" class="modal-close" type="button" aria-label="Close">×</button>
+          <div id="modalContent"></div>
+        </article>
+      </div>
     </section>
   </main>
-  <script src="./app.js?v=175" defer></script>
+  <script src="./app.js?v=180" defer></script>
 </body>
 </html>
