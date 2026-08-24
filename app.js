@@ -1,4 +1,4 @@
-const VERSION = '171';
+const VERSION = '172';
 const STORAGE_KEY = 'sde-inventory-v2';
 const MAP_SOURCE = `./assets/scenes/map-hd.png?v=${VERSION}`;
 
@@ -96,6 +96,7 @@ const errorBox = document.getElementById('errorBox');
 let index = 0;
 let busy = false;
 let timer;
+let selectedItem = null;
 const cache = new Map();
 const collected = new Set(loadInventory());
 
@@ -157,23 +158,42 @@ function makeInventoryCrop(id) {
   return frame;
 }
 
+function selectInventoryItem(id) {
+  if (!id || !collected.has(id)) return;
+  selectedItem = selectedItem === id ? null : id;
+  renderInventory();
+  if (selectedItem) {
+    showToast(`${ITEM_DEFS[selectedItem].label} selected.`);
+  } else {
+    showToast('Item deselected.');
+  }
+}
+
 function renderInventory() {
   const ids = [...collected];
   inventorySlots.forEach((slot, i) => {
     const id = ids[i];
     slot.className = 'inventory-slot';
     slot.replaceChildren();
+    delete slot.dataset.itemId;
+    slot.setAttribute('aria-pressed', 'false');
     if (!id) {
       slot.setAttribute('aria-label', 'Empty slot');
       slot.removeAttribute('title');
       return;
     }
     const def = ITEM_DEFS[id];
+    slot.dataset.itemId = id;
     slot.classList.add('has-item', `item-${id}`);
-    slot.setAttribute('aria-label', def.label);
+    if (selectedItem === id) {
+      slot.classList.add('selected');
+      slot.setAttribute('aria-pressed', 'true');
+    }
+    slot.setAttribute('aria-label', `${def.label}${selectedItem === id ? ', selected' : ''}`);
     slot.title = def.label;
     slot.appendChild(makeInventoryCrop(id));
   });
+  satchel.classList.toggle('has-selection', Boolean(selectedItem));
 }
 
 function renderMapProps(scene) {
@@ -307,6 +327,9 @@ back.addEventListener('click', () => go(index - 1));
 hint.addEventListener('click', showHint);
 reset.addEventListener('click', window.resetEnigma);
 satchel.addEventListener('click', toggleInventory);
+inventorySlots.forEach(slot => {
+  slot.addEventListener('click', () => selectInventoryItem(slot.dataset.itemId));
+});
 document.addEventListener('pointerdown', event => {
   if (!event.target.closest('button')) echo(event.clientX, event.clientY);
 });
