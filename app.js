@@ -1,12 +1,13 @@
-const VERSION = '184';
-const SAVE_KEY = 'sde-save-v184';
+const VERSION = '185';
+const SAVE_KEY = 'sde-save-v185';
 const LEGACY_KEYS = [
   'sde-inventory-v2',
   'sde-inventory-v1',
   'sde-save-v176',
   'sde-save-v180',
   'sde-save-v181',
-  'sde-save-v183'
+  'sde-save-v183',
+  'sde-save-v184'
 ];
 
 const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
@@ -18,12 +19,13 @@ const MAP_SOURCES = {
   none: `${R2_BASE}/map/map-none.png`
 };
 
+const CAMP_SOURCE = `${R2_BASE}/scenes/camp-hidden-v185.png`;
 const MAP_DETAIL_SOURCE = `${R2_BASE}/map/map-detail.png`;
 const ENTRANCE_HIDDEN_SOURCE = `${R2_BASE}/scenes/entrance-hidden-v184.png`;
 const TUNNEL_DARK_SOURCE = `${R2_BASE}/scenes/tunnel-dark-v183.png`;
 const SERVICE_ROOM_SOURCE = `${R2_BASE}/scenes/service-room-v184.png`;
 const PRESSURE_BANK_SOURCE = `${R2_BASE}/puzzles/pressure-bank-v184.png`;
-const SELECTOR_PANEL_SOURCE = `${R2_BASE}/puzzles/selector-panel-v184.png`;
+const PUMP_REGULATOR_SOURCE = `${R2_BASE}/puzzles/pump-regulator-v185.png`;
 
 const ITEM_DEFS = {
   compass: {
@@ -59,15 +61,15 @@ const DEFAULT_STATE = {
   }
 };
 
-// The photographed pressure bank reads approximately:
-// circle = 2, triangle = 1, diamond = 3.
-// The selector panel presents the same symbols in another order.
+// Pressure-bank clue: circle = 2, triangle = 1, diamond = 3.
+// Regulator controls deliberately present the symbols in another order.
 const PANEL_CONTROLS = [
-  { symbol: '△', x: 23 },
-  { symbol: '◇', x: 40 },
-  { symbol: '○', x: 57 }
+  { symbol: '△', x: 28.5 },
+  { symbol: '◇', x: 50.0 },
+  { symbol: '○', x: 71.5 }
 ];
 const PANEL_SOLUTION = [1, 3, 2];
+const LEVER_ANGLES = [-30, -15, 0, 15, 30];
 
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -109,13 +111,14 @@ let state = loadState();
 let selectedItem = null;
 let busy = false;
 let toastTimer;
-let selectorState = [0, 0, 0];
+// Start visually near the photographed HIGH position.
+let selectorState = [4, 4, 4];
 const cache = new Map();
 
 const SCENES = {
   camp: {
     id: 'camp',
-    src: `./assets/scenes/camp-hd.avif?v=${VERSION}`,
+    src: CAMP_SOURCE,
     pos: 'center center'
   },
   map: {
@@ -371,7 +374,7 @@ function currentHint() {
 
     case 'service':
       if (!f.pressureBankSeen) return 'One of the old pressure assemblies is still readable.';
-      if (!f.powerRestored) return 'The same three symbols appear on the pressure bank and the regulator panel.';
+      if (!f.powerRestored) return 'Match the pressure readings by symbol. The regulator levers have five detents.';
       return 'Emergency power has opened the route deeper into the facility.';
 
     case 'lab':
@@ -388,11 +391,11 @@ function sceneHotspots(scene) {
 
   if (scene.id === 'camp') {
     const list = [
-      { id: 'camp-table', action: 'goto', target: 'map', area: [0, 43, 54, 25], label: 'Examine the field table', z: 3 },
-      { id: 'camp-gear', action: 'gear', area: [62, 59, 34, 26], label: 'Search the expedition gear cases', z: 4 }
+      { id: 'camp-table', action: 'goto', target: 'map', area: [0, 44, 55, 23], label: 'Examine the field table', z: 3 },
+      { id: 'camp-gear', action: 'gear', area: [62, 56, 35, 28], label: 'Search the expedition gear cases', z: 4 }
     ];
     if (f.mapExamined) {
-      list.push({ id: 'camp-route', action: 'route', area: [0, 10, 43, 34], label: 'Follow the jungle route', z: 5 });
+      list.push({ id: 'camp-route', action: 'route', area: [0, 12, 42, 34], label: 'Follow the jungle route', z: 5 });
     }
     return list;
   }
@@ -615,29 +618,32 @@ function handleInspectPressureBank() {
   openPhotoInspect(PRESSURE_BANK_SOURCE, 'Old pump pressure bank with three analog gauges and etched symbols');
 }
 
-function selectorBadgeMarkup(control, i) {
+function leverMarkup(control, i) {
   const value = selectorState[i];
+  const angle = LEVER_ANGLES[value];
   return `
-    <span class="panel-symbol-plaque" style="--x:${control.x}%">${control.symbol}</span>
-    <button class="panel-lever-target" type="button" data-selector="${i}" style="--x:${control.x}%" aria-label="Selector ${control.symbol}, position ${value}">
-      <span class="panel-position">${value}</span>
+    <span class="pump-symbol-plaque" style="--x:${control.x}%">${control.symbol}</span>
+    <button class="pump-lever-control" type="button" data-selector="${i}" style="--x:${control.x}%;--angle:${angle}deg" aria-label="Regulator ${control.symbol}, detent ${value}">
+      <span class="pump-lever-mask"></span>
+      <span class="pump-lever-arm"></span>
+      <span class="pump-lever-pivot"></span>
+      <span class="pump-detents" aria-hidden="true">
+        <i>0</i><i>1</i><i>2</i><i>3</i><i>4</i>
+      </span>
     </button>
   `;
 }
 
 function renderSelectorPuzzle() {
   modalContent.innerHTML = `
-    <div id="selectorPhotoWrap" class="selector-photo-wrap">
-      <img class="selector-photo" src="${SELECTOR_PANEL_SOURCE}" alt="Corroded pump pressure regulator with three mechanical levers">
-      ${PANEL_CONTROLS.map(selectorBadgeMarkup).join('')}
-      <button id="engagePanel" class="panel-engage" type="button" aria-label="Engage regulator">
-        <span></span>
-        <b>ENGAGE</b>
-      </button>
+    <div id="pumpPanelWrap" class="pump-panel-wrap">
+      <img class="pump-panel-photo" src="${PUMP_REGULATOR_SOURCE}" alt="Corroded pump regulation unit with three mechanical levers">
+      ${PANEL_CONTROLS.map(leverMarkup).join('')}
+      <button id="engagePanel" class="pump-engage-target" type="button" aria-label="Engage pump regulator"></button>
     </div>
   `;
 
-  modalContent.querySelectorAll('.panel-lever-target').forEach(button => {
+  modalContent.querySelectorAll('.pump-lever-control').forEach(button => {
     button.addEventListener('click', () => {
       const i = Number(button.dataset.selector);
       selectorState[i] = (selectorState[i] + 1) % 5;
@@ -650,7 +656,7 @@ function renderSelectorPuzzle() {
 
 function openSelectorPuzzle() {
   if (state.flags.powerRestored) {
-    openPhotoInspect(SELECTOR_PANEL_SOURCE, 'Powered pump pressure regulator');
+    openPhotoInspect(PUMP_REGULATOR_SOURCE, 'Powered pump pressure regulator');
     return;
   }
 
@@ -666,7 +672,7 @@ function applySelectorPuzzle() {
   const solved = selectorState.every((value, i) => value === PANEL_SOLUTION[i]);
 
   if (!solved) {
-    const wrap = modalContent.querySelector('#selectorPhotoWrap');
+    const wrap = modalContent.querySelector('#pumpPanelWrap');
     if (wrap) {
       wrap.classList.remove('rejected');
       requestAnimationFrame(() => wrap.classList.add('rejected'));
@@ -910,12 +916,13 @@ async function boot() {
     const sources = [...new Set([
       ...Object.values(SCENES).map(sceneSource),
       ...Object.values(MAP_SOURCES),
+      CAMP_SOURCE,
       MAP_DETAIL_SOURCE,
       ENTRANCE_HIDDEN_SOURCE,
       TUNNEL_DARK_SOURCE,
       SERVICE_ROOM_SOURCE,
       PRESSURE_BANK_SOURCE,
-      SELECTOR_PANEL_SOURCE,
+      PUMP_REGULATOR_SOURCE,
       ...Object.values(ITEM_DEFS).map(item => item.icon)
     ])];
 
