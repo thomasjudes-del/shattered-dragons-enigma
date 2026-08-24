@@ -1,6 +1,6 @@
-const VERSION = '180';
-const SAVE_KEY = 'sde-save-v180';
-const LEGACY_KEYS = ['sde-inventory-v2', 'sde-inventory-v1', 'sde-save-v176'];
+const VERSION = '181';
+const SAVE_KEY = 'sde-save-v181';
+const LEGACY_KEYS = ['sde-inventory-v2', 'sde-inventory-v1', 'sde-save-v176', 'sde-save-v180'];
 const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
 
 const MAP_SOURCES = {
@@ -40,7 +40,6 @@ const DEFAULT_STATE = {
   history: [],
   inventory: [],
   flags: {
-    briefingRead: false,
     mapExamined: false,
     routeAligned: false,
     entranceCleared: false,
@@ -98,11 +97,6 @@ const SCENES = {
     src: `./assets/scenes/camp-hd.avif?v=${VERSION}`,
     pos: 'center center'
   },
-  team: {
-    id: 'team',
-    src: `./assets/scenes/team-hd.png?v=${VERSION}`,
-    pos: 'center center'
-  },
   map: {
     id: 'map',
     src: MAP_SOURCES.both,
@@ -137,6 +131,7 @@ const back = document.getElementById('back');
 const hint = document.getElementById('hint');
 const reset = document.getElementById('reset');
 const satchel = document.getElementById('satchel');
+const selectedItemLabel = document.getElementById('selectedItemLabel');
 const inventory = document.getElementById('inventory');
 const inventorySlots = [...inventory.querySelectorAll('.inventory-slot')];
 const toast = document.getElementById('toast');
@@ -237,17 +232,6 @@ function closeModal() {
   modalContent.replaceChildren();
 }
 
-function showBriefing() {
-  state.flags.briefingRead = true;
-  saveState();
-  openModal(`
-    <p class="eyebrow">FIELD BRIEFING</p>
-    <h2>Biodiversity survey, Sector 7</h2>
-    <p>The team expected a routine transect. GPS drift and an old hand-marked survey sheet now point beyond the registered study area.</p>
-    <p class="modal-note">No one has a record of a structure here. Start with the field table.</p>
-  `);
-}
-
 function showItemInfo(id) {
   const def = ITEM_DEFS[id];
   if (!def) return;
@@ -292,6 +276,10 @@ function renderInventory() {
     slot.appendChild(icon);
   });
   satchel.classList.toggle('has-selection', Boolean(selectedItem));
+  if (selectedItemLabel) {
+    selectedItemLabel.hidden = !selectedItem;
+    selectedItemLabel.textContent = selectedItem ? `USING: ${ITEM_DEFS[selectedItem].label.toUpperCase()}` : '';
+  }
 }
 
 function selectInventoryItem(id) {
@@ -310,29 +298,27 @@ function currentHint() {
   const f = state.flags;
   switch (state.sceneId) {
     case 'camp':
-      if (f.mechanismInspected && !hasItem('crank') && !f.entranceOpened) return 'The entrance needs a square-drive handle. Check the old survey winch in the gear area.';
+      if (f.mechanismInspected && !hasItem('crank') && !f.entranceOpened) return 'The entrance needs a square-drive handle. Check the expedition gear cases.';
       if (!f.mapExamined) return 'The field table holds the route information you need.';
-      if (!hasItem('compass')) return 'The marked route needs an orientation reference. The compass is on the field table.';
-      if (!f.routeAligned) return 'Select the compass, then use it on the jungle route beyond camp.';
-      return 'The buried entrance lies on the aligned route.';
-    case 'team':
-      return 'The team has no record of a structure here. The map is the only useful lead.';
+      if (!hasItem('compass')) return 'The compass is on the field table.';
+      if (!f.routeAligned) return 'Select the compass, then tap the jungle route at the upper left.';
+      return 'The route is already aligned. Tap the jungle route at the upper left.';
     case 'map':
-      if (!f.mapExamined) return 'Inspect the map closely, especially the red X and the route leading to it.';
-      return 'Take any expedition gear that may matter later, then return to camp.';
+      if (!f.mapExamined) return 'Inspect the map closely, especially the red X.';
+      return 'Take the compass and flashlight if you have not already, then return to camp.';
     case 'map-detail':
-      return f.mapExamined ? 'You have the bearing. Return to camp and use the compass on the route.' : 'The red X is connected to a marked approach. Inspect it.';
+      return f.mapExamined ? 'Bearing recorded. Go back to camp.' : 'Tap the red X to record the marked approach.';
     case 'entrance':
-      if (!f.entranceCleared) return 'Roots and branches block the mechanism. A cutting tool would help.';
-      if (!f.mechanismInspected) return 'Now that the roots are clear, examine the old drive mechanism.';
-      if (!hasItem('crank') && !f.entranceOpened) return 'The mechanism is intact but its handle is missing. Think of similar expedition hardware.';
-      if (!f.entranceOpened) return 'Select the winch crank and use it on the mechanism.';
-      return 'The passage is open. Go inside.';
+      if (!f.entranceCleared) return 'Roots block the mechanism. Select the pruning saw, then tap the blocked entrance.';
+      if (!f.mechanismInspected) return 'Tap the exposed mechanism.';
+      if (!hasItem('crank') && !f.entranceOpened) return 'The handle is missing. Go back to camp and search the expedition gear cases.';
+      if (!f.entranceOpened) return 'Select the winch crank, then tap the mechanism.';
+      return 'The passage is open. Tap the doorway.';
     case 'lab':
-      if (!f.powerRestored && !f.flashlightActive) return 'There is almost no usable light. Select the flashlight and use it in the darkness.';
-      if (!f.powerRestored && !f.machineInspected) return 'The machinery itself may tell you how the emergency controls should be set.';
-      if (!f.powerRestored) return 'Use the LOW / HIGH / LOW pattern at the emergency control panel.';
-      if (!f.anomalyDetected) return 'Power is back, but something is wrong. Try a tool that can react to orientation or fields.';
+      if (!f.powerRestored && !f.flashlightActive) return 'Select the flashlight, then tap the dark scene.';
+      if (!f.powerRestored && !f.machineInspected) return 'Inspect the central machinery.';
+      if (!f.powerRestored) return 'Use the LOW / HIGH / LOW pattern at the control panel.';
+      if (!f.anomalyDetected) return 'Select the compass, then inspect the western wall.';
       return 'The compass is pointing through solid concrete.';
     default:
       return 'Observe the environment and use the tools you have collected.';
@@ -344,16 +330,12 @@ function sceneHotspots(scene) {
   if (scene.id === 'camp') {
     const list = [
       { id: 'camp-table', action: 'goto', target: 'map', area: [0, 43, 54, 25], label: 'Examine the field table', z: 3 },
-      { id: 'camp-team', action: 'briefing', area: [53, 20, 44, 40], label: 'Check in with the expedition team', z: 2 },
-      { id: 'camp-gear', action: 'gear', area: [55, 61, 43, 34], label: 'Search the expedition gear', z: 4 }
+      { id: 'camp-gear', action: 'gear', area: [62, 59, 34, 26], label: 'Search the expedition gear cases', z: 4 }
     ];
     if (f.mapExamined) {
       list.push({ id: 'camp-route', action: 'route', area: [0, 10, 43, 34], label: 'Follow the marked jungle route', z: 5 });
     }
     return list;
-  }
-  if (scene.id === 'team') {
-    return [{ id: 'team-briefing', action: 'briefing', area: [20, 12, 60, 74], label: 'Listen to the field briefing', z: 2 }];
   }
   if (scene.id === 'map') {
     return [
@@ -501,12 +483,16 @@ function handleRoute() {
     showToast('You do not know which route to follow yet.');
     return;
   }
+  if (state.flags.routeAligned) {
+    goTo('entrance');
+    return;
+  }
   if (!hasItem('compass')) {
     showToast('The map gives a bearing, but you left the compass behind.');
     return;
   }
   if (selectedItem !== 'compass') {
-    showToast('The route is marked 042° NE. Select the compass and align the bearing.');
+    showToast('The route is marked 042° NE. Open the satchel and select the compass.');
     return;
   }
   state.flags.routeAligned = true;
@@ -523,7 +509,7 @@ function handleClearRoots() {
     return;
   }
   if (selectedItem !== 'saw') {
-    showToast('The pruning saw should work here. Select it from the satchel.');
+    showToast('Open the satchel, select the pruning saw, then tap the blocked entrance.');
     return;
   }
   state.flags.entranceCleared = true;
@@ -547,7 +533,7 @@ function handleOpenEntrance() {
     return;
   }
   if (selectedItem !== 'crank') {
-    showToast('Select the winch crank, then use it on the square drive.');
+    showToast('Open the satchel, select the winch crank, then tap the mechanism.');
     return;
   }
   state.flags.entranceOpened = true;
@@ -563,7 +549,7 @@ function handleFlashlight() {
     return;
   }
   if (selectedItem !== 'flashlight') {
-    showToast('Select the flashlight from the satchel.');
+    showToast('Open the satchel, select the flashlight, then tap the darkness.');
     return;
   }
   state.flags.flashlightActive = true;
@@ -657,7 +643,7 @@ function handleDetectAnomaly() {
     return;
   }
   if (selectedItem !== 'compass') {
-    showToast('Something feels wrong near this wall. Try the compass.');
+    showToast('Open the satchel, select the compass, then tap the western wall.');
     return;
   }
   state.flags.anomalyDetected = true;
@@ -681,14 +667,13 @@ function activateHotspot(spec, event) {
   echo(event.clientX, event.clientY);
   switch (spec.action) {
     case 'goto': goTo(spec.target); break;
-    case 'briefing': showBriefing(); break;
     case 'gear': handleGearSearch(); break;
     case 'route': handleRoute(); break;
     case 'collect': collectItem(spec.item); break;
     case 'mark-route':
       state.flags.mapExamined = true;
       saveState();
-      showToast('Marked approach: 042° NE from camp. The red X lies beyond the registered survey area.', 3200);
+      showToast('Marked approach recorded: 042° NE from camp.', 2600);
       refreshCurrentScene();
       break;
     case 'clear-roots': handleClearRoots(); break;
