@@ -1,4 +1,4 @@
-const VERSION = '170';
+const VERSION = '171';
 const STORAGE_KEY = 'sde-inventory-v2';
 const MAP_SOURCE = `./assets/scenes/map-hd.png?v=${VERSION}`;
 
