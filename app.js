@@ -1,6 +1,13 @@
-const VERSION = '172';
+const VERSION = '173';
 const STORAGE_KEY = 'sde-inventory-v2';
-const MAP_SOURCE = `./assets/scenes/map-hd.png?v=${VERSION}`;
+const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
+const MAP_SOURCES = {
+  both: `${R2_BASE}/map/map-both.png`,
+  flashlightOnly: `${R2_BASE}/map/map-flashlight-only.png`,
+  compassOnly: `${R2_BASE}/map/map-compass-only.png`,
+  none: `${R2_BASE}/map/map-none.png`
+};
+const MAP_SOURCE = MAP_SOURCES.both;
 
 function applyRequestedReset() {
   const url = new URL(window.location.href);
@@ -123,6 +130,20 @@ window.resetEnigma = function resetEnigma() {
   window.location.href = `./?v=${VERSION}&reset=1`;
 };
 
+function currentMapSource() {
+  const hasCompass = !collected.has('compass');
+  const hasFlashlight = !collected.has('flashlight');
+  if (hasCompass && hasFlashlight) return MAP_SOURCES.both;
+  if (!hasCompass && hasFlashlight) return MAP_SOURCES.flashlightOnly;
+  if (hasCompass && !hasFlashlight) return MAP_SOURCES.compassOnly;
+  return MAP_SOURCES.none;
+}
+
+function sceneSource(scene) {
+  if (scene.id === 'map' || scene.id === 'map-detail') return currentMapSource();
+  return scene.src;
+}
+
 function preload(src) {
   return new Promise((resolve, reject) => {
     if (cache.has(src)) return resolve(cache.get(src));
@@ -151,7 +172,7 @@ function makeInventoryCrop(id) {
   frame.setAttribute('aria-hidden', 'true');
   const crop = document.createElement('img');
   crop.className = 'inventory-crop';
-  crop.src = MAP_SOURCE;
+  crop.src = MAP_SOURCES.both;
   crop.alt = '';
   crop.draggable = false;
   frame.appendChild(crop);
@@ -162,11 +183,7 @@ function selectInventoryItem(id) {
   if (!id || !collected.has(id)) return;
   selectedItem = selectedItem === id ? null : id;
   renderInventory();
-  if (selectedItem) {
-    showToast(`${ITEM_DEFS[selectedItem].label} selected.`);
-  } else {
-    showToast('Item deselected.');
-  }
+  showToast(selectedItem ? `${ITEM_DEFS[selectedItem].label} selected.` : 'Item deselected.');
 }
 
 function renderInventory() {
@@ -196,21 +213,22 @@ function renderInventory() {
   satchel.classList.toggle('has-selection', Boolean(selectedItem));
 }
 
-function renderMapProps(scene) {
-  sceneProps.replaceChildren();
-  if (scene.id !== 'map') return;
-  for (const id of ['compass', 'flashlight']) {
-    if (!collected.has(id)) continue;
-    const mask = document.createElement('span');
-    mask.className = `scene-mask scene-mask-${id}`;
-    mask.setAttribute('aria-hidden', 'true');
-    sceneProps.appendChild(mask);
-  }
-}
-
 function getSceneHotspots(scene) {
   if (scene.id !== 'map') return scene.hotspots || [];
   return (scene.hotspots || []).filter(spec => spec.action !== 'collect' || !collected.has(spec.item));
+}
+
+async function refreshMapImage() {
+  const scene = scenes[index];
+  if (scene.id !== 'map' && scene.id !== 'map-detail') return;
+  const src = currentMapSource();
+  try {
+    await preload(src);
+    image.src = src;
+  } catch (err) {
+    console.error(err);
+    showError('Map state failed to load.');
+  }
 }
 
 function collectItem(id) {
@@ -219,9 +237,8 @@ function collectItem(id) {
   collected.add(id);
   saveInventory();
   renderInventory();
-  const scene = scenes[index];
-  renderMapProps(scene);
-  setHotspots(scene);
+  setHotspots(scenes[index]);
+  refreshMapImage();
   showToast(`${def.label} added to satchel.`);
 }
 
@@ -266,7 +283,7 @@ function render(i) {
   image.style.transformOrigin = 'center center';
   image.classList.toggle('map-detail-fallback', scene.id === 'map-detail');
   back.hidden = i === 0;
-  renderMapProps(scene);
+  sceneProps.replaceChildren();
   setHotspots(scene);
 }
 
@@ -281,11 +298,12 @@ async function go(i) {
   busy = true;
   closeInventory();
   const next = scenes[i];
+  const src = sceneSource(next);
   try {
-    await preload(next.src);
+    await preload(src);
     image.classList.add('fade');
     setTimeout(() => {
-      image.src = next.src;
+      image.src = src;
       render(i);
       requestAnimationFrame(() => image.classList.remove('fade'));
       busy = false;
@@ -341,12 +359,17 @@ document.addEventListener('keydown', event => {
 async function boot() {
   renderInventory();
   try {
-    await preload(scenes[0].src);
-    image.src = scenes[0].src;
+    const firstSrc = sceneSource(scenes[0]);
+    await preload(firstSrc);
+    image.src = firstSrc;
     render(0);
     game.dataset.ready = 'true';
     loading.hidden = true;
-    Promise.allSettled([...new Set(scenes.slice(1).map(scene => scene.src))].map(preload));
+    const sources = [...new Set([
+      ...scenes.slice(1).map(sceneSource),
+      ...Object.values(MAP_SOURCES)
+    ])];
+    Promise.allSettled(sources.map(preload));
   } catch (err) {
     console.error(err);
     loading.hidden = true;
