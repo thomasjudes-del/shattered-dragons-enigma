@@ -1,6 +1,14 @@
-const VERSION = '183';
-const SAVE_KEY = 'sde-save-v183';
-const LEGACY_KEYS = ['sde-inventory-v2', 'sde-inventory-v1', 'sde-save-v176', 'sde-save-v180', 'sde-save-v181'];
+const VERSION = '184';
+const SAVE_KEY = 'sde-save-v184';
+const LEGACY_KEYS = [
+  'sde-inventory-v2',
+  'sde-inventory-v1',
+  'sde-save-v176',
+  'sde-save-v180',
+  'sde-save-v181',
+  'sde-save-v183'
+];
+
 const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
 
 const MAP_SOURCES = {
@@ -9,9 +17,13 @@ const MAP_SOURCES = {
   compassOnly: `${R2_BASE}/map/map-compass-only.png`,
   none: `${R2_BASE}/map/map-none.png`
 };
+
 const MAP_DETAIL_SOURCE = `${R2_BASE}/map/map-detail.png`;
-const ENTRANCE_BLOCKED_SOURCE = `${R2_BASE}/scenes/entrance-blocked-v183.png`;
+const ENTRANCE_HIDDEN_SOURCE = `${R2_BASE}/scenes/entrance-hidden-v184.png`;
 const TUNNEL_DARK_SOURCE = `${R2_BASE}/scenes/tunnel-dark-v183.png`;
+const SERVICE_ROOM_SOURCE = `${R2_BASE}/scenes/service-room-v184.png`;
+const PRESSURE_BANK_SOURCE = `${R2_BASE}/puzzles/pressure-bank-v184.png`;
+const SELECTOR_PANEL_SOURCE = `${R2_BASE}/puzzles/selector-panel-v184.png`;
 
 const ITEM_DEFS = {
   compass: {
@@ -41,20 +53,21 @@ const DEFAULT_STATE = {
     routeAligned: false,
     entranceCleared: false,
     flashlightActive: false,
-    machineInspected: false,
+    pressureBankSeen: false,
     powerRestored: false,
     anomalyDetected: false
   }
 };
 
-const GAUGE_CLUE = [
-  { symbol: '○', position: 3 },
-  { symbol: '△', position: 1 },
-  { symbol: '◇', position: 2 }
+// The photographed pressure bank reads approximately:
+// circle = 2, triangle = 1, diamond = 3.
+// The selector panel presents the same symbols in another order.
+const PANEL_CONTROLS = [
+  { symbol: '△', x: 23 },
+  { symbol: '◇', x: 40 },
+  { symbol: '○', x: 57 }
 ];
-const PANEL_SYMBOLS = ['△', '◇', '○'];
-const PANEL_SOLUTION = [1, 2, 3];
-const DIAL_ANGLES = [-58, -19, 20, 58];
+const PANEL_SOLUTION = [1, 3, 2];
 
 function cloneDefaultState() {
   return JSON.parse(JSON.stringify(DEFAULT_STATE));
@@ -79,8 +92,12 @@ function loadState() {
     if (!raw || raw.version !== VERSION) return cloneDefaultState();
     const fresh = cloneDefaultState();
     fresh.sceneId = typeof raw.sceneId === 'string' ? raw.sceneId : fresh.sceneId;
-    fresh.history = Array.isArray(raw.history) ? raw.history.filter(id => typeof id === 'string').slice(-30) : [];
-    fresh.inventory = Array.isArray(raw.inventory) ? raw.inventory.filter(id => ITEM_DEFS[id]).slice(0, 5) : [];
+    fresh.history = Array.isArray(raw.history)
+      ? raw.history.filter(id => typeof id === 'string').slice(-30)
+      : [];
+    fresh.inventory = Array.isArray(raw.inventory)
+      ? raw.inventory.filter(id => ITEM_DEFS[id]).slice(0, 5)
+      : [];
     fresh.flags = { ...fresh.flags, ...(raw.flags || {}) };
     return fresh;
   } catch {
@@ -92,7 +109,7 @@ let state = loadState();
 let selectedItem = null;
 let busy = false;
 let toastTimer;
-let circuitState = [0, 0, 0];
+let selectorState = [0, 0, 0];
 const cache = new Map();
 
 const SCENES = {
@@ -119,6 +136,11 @@ const SCENES = {
   tunnel: {
     id: 'tunnel',
     src: TUNNEL_DARK_SOURCE,
+    pos: 'center center'
+  },
+  service: {
+    id: 'service',
+    src: SERVICE_ROOM_SOURCE,
     pos: 'center center'
   },
   lab: {
@@ -189,7 +211,7 @@ function currentMapSource() {
 
 function sceneSource(scene) {
   if (scene.id === 'map') return currentMapSource();
-  if (scene.id === 'entrance' && !state.flags.entranceCleared) return ENTRANCE_BLOCKED_SOURCE;
+  if (scene.id === 'entrance' && !state.flags.entranceCleared) return ENTRANCE_HIDDEN_SOURCE;
   return scene.src;
 }
 
@@ -227,19 +249,29 @@ function pulseSatchel() {
   setTimeout(() => satchel.classList.remove('item-added'), 520);
 }
 
-function openModal(html, { ending = false } = {}) {
+function openModal(html, { ending = false, mode = '' } = {}) {
   modalContent.innerHTML = html;
   modalLayer.hidden = false;
-  modalLayer.classList.toggle('ending', ending);
+  modalLayer.classList.remove('ending', 'photo-view', 'panel-view');
+  if (ending) modalLayer.classList.add('ending');
+  if (mode) modalLayer.classList.add(mode);
   modalLayer.setAttribute('aria-hidden', 'false');
   closeInventory();
 }
 
 function closeModal() {
   modalLayer.hidden = true;
-  modalLayer.classList.remove('ending');
+  modalLayer.classList.remove('ending', 'photo-view', 'panel-view');
   modalLayer.setAttribute('aria-hidden', 'true');
   modalContent.replaceChildren();
+}
+
+function openPhotoInspect(src, alt) {
+  openModal(`
+    <div class="photo-inspect">
+      <img class="photo-inspect-image" src="${src}" alt="${alt}">
+    </div>
+  `, { mode: 'photo-view' });
 }
 
 function showItemInfo(id) {
@@ -264,20 +296,25 @@ function renderInventory() {
     slot.replaceChildren();
     delete slot.dataset.itemId;
     slot.setAttribute('aria-pressed', 'false');
+
     if (!id) {
       slot.setAttribute('aria-label', 'Empty slot');
       slot.removeAttribute('title');
       return;
     }
+
     const def = ITEM_DEFS[id];
     slot.dataset.itemId = id;
     slot.classList.add('has-item');
+
     if (selectedItem === id) {
       slot.classList.add('selected');
       slot.setAttribute('aria-pressed', 'true');
     }
+
     slot.setAttribute('aria-label', `${def.label}${selectedItem === id ? ', selected' : ''}`);
     slot.title = def.label;
+
     const icon = document.createElement('img');
     icon.className = 'inventory-item-icon';
     icon.src = def.icon;
@@ -285,10 +322,14 @@ function renderInventory() {
     icon.draggable = false;
     slot.appendChild(icon);
   });
+
   satchel.classList.toggle('has-selection', Boolean(selectedItem));
+
   if (selectedItemLabel) {
     selectedItemLabel.hidden = !selectedItem;
-    selectedItemLabel.textContent = selectedItem ? `USING: ${ITEM_DEFS[selectedItem].label.toUpperCase()}` : '';
+    selectedItemLabel.textContent = selectedItem
+      ? `USING: ${ITEM_DEFS[selectedItem].label.toUpperCase()}`
+      : '';
   }
 }
 
@@ -301,26 +342,42 @@ function selectInventoryItem(id) {
 
 function currentHint() {
   const f = state.flags;
+
   switch (state.sceneId) {
     case 'camp':
       if (!f.mapExamined) return 'The field table deserves a closer look.';
       if (!hasItem('compass')) return 'A bearing is only useful if you can orient it.';
       if (!f.routeAligned) return 'The map gave you a bearing. Try the compass on the jungle route.';
       return 'You already know which way the marked route lies.';
+
     case 'map':
       if (!f.mapExamined) return 'The red mark on the map is not random.';
       return 'Some of the gear on this table may matter later.';
+
     case 'map-detail':
-      return f.mapExamined ? 'You have what you need from the map.' : 'Study the red mark and the approach drawn into it.';
+      return f.mapExamined
+        ? 'You have what you need from the map.'
+        : 'Study the red mark and the approach drawn into it.';
+
     case 'entrance':
-      return f.entranceCleared ? 'The way in is no longer physically blocked.' : 'The obstruction is organic, not structural.';
+      return f.entranceCleared
+        ? 'The concrete opening is usable now.'
+        : 'The straight concrete edges continue behind the growth.';
+
     case 'tunnel':
-      return f.flashlightActive ? 'The passage continues deeper.' : 'Daylight is gone now.';
+      return f.flashlightActive
+        ? 'The lit passage continues deeper.'
+        : 'Daylight is gone now.';
+
+    case 'service':
+      if (!f.pressureBankSeen) return 'One of the old pressure assemblies is still readable.';
+      if (!f.powerRestored) return 'The same three symbols appear on the pressure bank and the regulator panel.';
+      return 'Emergency power has opened the route deeper into the facility.';
+
     case 'lab':
-      if (!f.powerRestored && !f.machineInspected) return 'The dead machinery and the selector bank were built as one system.';
-      if (!f.powerRestored) return 'The same three etched symbols appear on the gauges and selector bank.';
-      if (!f.anomalyDetected) return 'Something here is interfering with orientation.';
+      if (!f.anomalyDetected) return 'The compass is behaving strangely near the western side of the room.';
       return 'The compass is no longer pointing north.';
+
     default:
       return 'Look at the environment before trying another tool.';
   }
@@ -328,65 +385,102 @@ function currentHint() {
 
 function sceneHotspots(scene) {
   const f = state.flags;
+
   if (scene.id === 'camp') {
     const list = [
       { id: 'camp-table', action: 'goto', target: 'map', area: [0, 43, 54, 25], label: 'Examine the field table', z: 3 },
       { id: 'camp-gear', action: 'gear', area: [62, 59, 34, 26], label: 'Search the expedition gear cases', z: 4 }
     ];
-    if (f.mapExamined) list.push({ id: 'camp-route', action: 'route', area: [0, 10, 43, 34], label: 'Follow the jungle route', z: 5 });
+    if (f.mapExamined) {
+      list.push({ id: 'camp-route', action: 'route', area: [0, 10, 43, 34], label: 'Follow the jungle route', z: 5 });
+    }
     return list;
   }
+
   if (scene.id === 'map') {
     return [
       { id: 'map-paper', action: 'goto', target: 'map-detail', area: [20, 42, 68, 38], label: 'Examine the map', z: 2 },
-      ...(!hasItem('compass') ? [{ id: 'compass', action: 'collect', item: 'compass', area: [1, 65, 27, 19], label: 'Take the compass', z: 5 }] : []),
-      ...(!hasItem('flashlight') ? [{ id: 'flashlight', action: 'collect', item: 'flashlight', area: [0, 78, 43, 18], label: 'Take the flashlight', z: 5 }] : [])
+      ...(!hasItem('compass')
+        ? [{ id: 'compass', action: 'collect', item: 'compass', area: [1, 65, 27, 19], label: 'Take the compass', z: 5 }]
+        : []),
+      ...(!hasItem('flashlight')
+        ? [{ id: 'flashlight', action: 'collect', item: 'flashlight', area: [0, 78, 43, 18], label: 'Take the flashlight', z: 5 }]
+        : [])
     ];
   }
+
   if (scene.id === 'map-detail') {
-    return [{ id: 'route-mark', action: 'mark-route', area: [49, 42, 12, 14], label: 'Study the marked approach', z: 3 }];
+    return [
+      { id: 'route-mark', action: 'mark-route', area: [49, 42, 12, 14], label: 'Study the marked approach', z: 3 }
+    ];
   }
+
   if (scene.id === 'entrance') {
     if (!f.entranceCleared) {
-      return [{ id: 'entrance-roots', action: 'clear-roots', area: [45, 40, 52, 45], label: 'Examine the fallen branches', z: 3 }];
-    }
-    return [{ id: 'entrance-open', action: 'goto', target: 'tunnel', area: [29, 30, 43, 52], label: 'Enter the structure', z: 3 }];
-  }
-  if (scene.id === 'tunnel') {
-    if (!f.flashlightActive) {
-      return [{ id: 'tunnel-dark', action: 'use-flashlight', area: [0, 0, 100, 100], label: 'Explore the darkness', z: 1 }];
-    }
-    return [{ id: 'tunnel-forward', action: 'goto', target: 'lab', area: [27, 20, 46, 65], label: 'Continue down the passage', z: 3 }];
-  }
-  if (scene.id === 'lab') {
-    if (!f.powerRestored) {
       return [
-        { id: 'lab-machine', action: 'inspect-machine', area: [25, 18, 48, 50], label: 'Inspect the machinery', z: 3 },
-        { id: 'lab-panel', action: 'open-panel', area: [70, 48, 29, 40], label: 'Inspect the selector bank', z: 4 }
+        { id: 'entrance-growth', action: 'clear-roots', area: [31, 30, 42, 47], label: 'Examine the overgrown concrete opening', z: 3 }
       ];
     }
     return [
-      { id: 'lab-wall', action: 'detect-anomaly', area: [0, 8, 34, 76], label: 'Examine the western wall', z: 4 },
-      { id: 'lab-machine-powered', action: 'inspect-powered-machine', area: [28, 18, 48, 52], label: 'Inspect the powered machinery', z: 3 }
+      { id: 'entrance-open', action: 'goto', target: 'tunnel', area: [29, 30, 43, 52], label: 'Enter the structure', z: 3 }
     ];
   }
+
+  if (scene.id === 'tunnel') {
+    if (!f.flashlightActive) {
+      return [
+        { id: 'tunnel-dark', action: 'use-flashlight', area: [0, 0, 100, 100], label: 'Explore the darkness', z: 1 }
+      ];
+    }
+    return [
+      { id: 'tunnel-forward', action: 'goto', target: 'service', area: [27, 20, 46, 65], label: 'Continue down the passage', z: 3 }
+    ];
+  }
+
+  if (scene.id === 'service') {
+    const list = [
+      { id: 'service-pressure', action: 'inspect-pressure', area: [67, 58, 31, 29], label: 'Inspect the pressure assembly', z: 4 },
+      { id: 'service-regulator', action: 'open-panel', area: [39, 27, 39, 40], label: 'Inspect the regulator panel', z: 5 }
+    ];
+    if (f.powerRestored) {
+      list.push({ id: 'service-deeper', action: 'goto', target: 'lab', area: [0, 30, 31, 48], label: 'Continue deeper into the facility', z: 6 });
+    }
+    return list;
+  }
+
+  if (scene.id === 'lab') {
+    return [
+      { id: 'lab-wall', action: 'detect-anomaly', area: [0, 8, 36, 76], label: 'Examine the western wall', z: 4 }
+    ];
+  }
+
   return [];
 }
 
 function renderSceneProps(scene) {
   sceneProps.replaceChildren();
+
   if (scene.id === 'tunnel') {
     const darkness = document.createElement('span');
     darkness.className = `tunnel-darkness${state.flags.flashlightActive ? ' flashlight-on' : ''}`;
     darkness.setAttribute('aria-hidden', 'true');
     sceneProps.appendChild(darkness);
   }
-  if (scene.id === 'lab' && !state.flags.powerRestored) {
+
+  if (scene.id === 'service' && !state.flags.powerRestored) {
     const dim = document.createElement('span');
-    dim.className = 'lab-power-off';
+    dim.className = 'service-power-off';
     dim.setAttribute('aria-hidden', 'true');
     sceneProps.appendChild(dim);
   }
+
+  if (scene.id === 'service' && state.flags.powerRestored) {
+    const glow = document.createElement('span');
+    glow.className = 'service-power-glow';
+    glow.setAttribute('aria-hidden', 'true');
+    sceneProps.appendChild(glow);
+  }
+
   if (scene.id === 'lab' && state.flags.anomalyDetected) {
     const pulse = document.createElement('span');
     pulse.className = 'anomaly-pulse';
@@ -397,6 +491,7 @@ function renderSceneProps(scene) {
 
 function positionHotspot(button, spec, scene) {
   const [left, top, width, height] = spec.area;
+
   if (scene.id === 'map-detail' && image.naturalWidth && image.naturalHeight) {
     const stageWidth = stage.clientWidth;
     const stageHeight = stage.clientHeight;
@@ -405,6 +500,7 @@ function positionHotspot(button, spec, scene) {
     const drawnHeight = image.naturalHeight * scale;
     const offsetX = (stageWidth - drawnWidth) / 2;
     const offsetY = (stageHeight - drawnHeight) / 2;
+
     Object.assign(button.style, {
       left: `${offsetX + drawnWidth * left / 100}px`,
       top: `${offsetY + drawnHeight * top / 100}px`,
@@ -413,6 +509,7 @@ function positionHotspot(button, spec, scene) {
     });
     return;
   }
+
   Object.assign(button.style, {
     left: `${left}%`,
     top: `${top}%`,
@@ -423,6 +520,7 @@ function positionHotspot(button, spec, scene) {
 
 function setHotspots(scene) {
   hotspots.replaceChildren();
+
   for (const spec of sceneHotspots(scene)) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -446,10 +544,12 @@ function refreshCurrentScene({ swapImage = false } = {}) {
 }
 
 function collectItem(id) {
-  if (!ITEM_DEFS[id] || hasItem(id)) return;
+  const def = ITEM_DEFS[id];
+  if (!def || hasItem(id)) return;
   if (!addItem(id)) return;
   if (state.sceneId === 'map') image.src = currentMapSource();
   refreshCurrentScene();
+  showToast(`${def.label} added to satchel.`);
 }
 
 function handleGearSearch() {
@@ -458,25 +558,32 @@ function handleGearSearch() {
 
 function handleRoute() {
   if (!state.flags.mapExamined) return;
+
   if (state.flags.routeAligned) {
     goTo('entrance');
     return;
   }
+
   if (!hasItem('compass') || selectedItem !== 'compass') return;
+
   state.flags.routeAligned = true;
   selectedItem = null;
   saveState();
   renderInventory();
-  setTimeout(() => goTo('entrance'), 120);
+  showToast('The compass settles on the marked bearing.');
+  setTimeout(() => goTo('entrance'), 520);
 }
 
 async function handleClearRoots() {
   if (!hasItem('saw') || selectedItem !== 'saw') return;
+
   state.flags.entranceCleared = true;
   selectedItem = null;
   saveState();
   renderInventory();
+
   const src = sceneSource(SCENES.entrance);
+
   try {
     await preload(src);
     image.classList.add('fade');
@@ -484,6 +591,7 @@ async function handleClearRoots() {
       image.src = src;
       renderScene(SCENES.entrance);
       requestAnimationFrame(() => image.classList.remove('fade'));
+      showToast('The cut vines expose a recessed concrete doorway.');
     }, 90);
   } catch {
     showError('Scene failed to load.');
@@ -492,99 +600,97 @@ async function handleClearRoots() {
 
 function handleFlashlight() {
   if (!hasItem('flashlight') || selectedItem !== 'flashlight') return;
+
   state.flags.flashlightActive = true;
   selectedItem = null;
   saveState();
   renderInventory();
   refreshCurrentScene();
+  showToast('The beam picks out a service corridor ahead.');
 }
 
-function gaugeMarkup({ symbol, position }) {
-  return `
-    <div class="visual-gauge">
-      <div class="gauge-face">
-        <i class="gauge-tick t1"></i><i class="gauge-tick t2"></i><i class="gauge-tick t3"></i><i class="gauge-tick t4"></i>
-        <span class="gauge-needle" style="--angle:${DIAL_ANGLES[position]}deg"></span>
-        <span class="gauge-hub"></span>
-      </div>
-      <strong class="gauge-symbol">${symbol}</strong>
-    </div>`;
-}
-
-function handleInspectMachine() {
-  state.flags.machineInspected = true;
+function handleInspectPressureBank() {
+  state.flags.pressureBankSeen = true;
   saveState();
-  openModal(`
-    <p class="eyebrow">SERVICE MACHINERY</p>
-    <h2>Pressure bank</h2>
-    <div class="gauge-bank">${GAUGE_CLUE.map(gaugeMarkup).join('')}</div>
-  `);
+  openPhotoInspect(PRESSURE_BANK_SOURCE, 'Old pump pressure bank with three analog gauges and etched symbols');
 }
 
-function selectorMarkup(symbol, value, i) {
+function selectorBadgeMarkup(control, i) {
+  const value = selectorState[i];
   return `
-    <button class="visual-selector" type="button" data-circuit="${i}" aria-label="Selector ${symbol}">
-      <strong>${symbol}</strong>
-      <span class="selector-face">
-        <i class="selector-tick s1"></i><i class="selector-tick s2"></i><i class="selector-tick s3"></i><i class="selector-tick s4"></i>
-        <span class="selector-needle" style="--angle:${DIAL_ANGLES[value]}deg"></span>
-        <span class="selector-hub"></span>
-      </span>
-    </button>`;
+    <span class="panel-symbol-plaque" style="--x:${control.x}%">${control.symbol}</span>
+    <button class="panel-lever-target" type="button" data-selector="${i}" style="--x:${control.x}%" aria-label="Selector ${control.symbol}, position ${value}">
+      <span class="panel-position">${value}</span>
+    </button>
+  `;
 }
 
-function renderCircuitPuzzle() {
+function renderSelectorPuzzle() {
   modalContent.innerHTML = `
-    <p class="eyebrow">EMERGENCY BUS</p>
-    <h2>Manual selector bank</h2>
-    <div id="selectorBank" class="selector-bank">
-      ${PANEL_SYMBOLS.map((symbol, i) => selectorMarkup(symbol, circuitState[i], i)).join('')}
+    <div id="selectorPhotoWrap" class="selector-photo-wrap">
+      <img class="selector-photo" src="${SELECTOR_PANEL_SOURCE}" alt="Corroded pump pressure regulator with three mechanical levers">
+      ${PANEL_CONTROLS.map(selectorBadgeMarkup).join('')}
+      <button id="engagePanel" class="panel-engage" type="button" aria-label="Engage regulator">
+        <span></span>
+        <b>ENGAGE</b>
+      </button>
     </div>
-    <button id="applyCircuit" class="modal-action compact-action" type="button">ENGAGE</button>
   `;
-  modalContent.querySelectorAll('.visual-selector').forEach(button => {
+
+  modalContent.querySelectorAll('.panel-lever-target').forEach(button => {
     button.addEventListener('click', () => {
-      const i = Number(button.dataset.circuit);
-      circuitState[i] = (circuitState[i] + 1) % 4;
-      renderCircuitPuzzle();
+      const i = Number(button.dataset.selector);
+      selectorState[i] = (selectorState[i] + 1) % 5;
+      renderSelectorPuzzle();
     });
   });
-  modalContent.querySelector('#applyCircuit').addEventListener('click', applyCircuitPuzzle);
+
+  modalContent.querySelector('#engagePanel').addEventListener('click', applySelectorPuzzle);
 }
 
-function openCircuitPuzzle() {
-  circuitState = [0, 0, 0];
+function openSelectorPuzzle() {
+  if (state.flags.powerRestored) {
+    openPhotoInspect(SELECTOR_PANEL_SOURCE, 'Powered pump pressure regulator');
+    return;
+  }
+
   modalLayer.hidden = false;
-  modalLayer.classList.remove('ending');
+  modalLayer.classList.remove('ending', 'photo-view');
+  modalLayer.classList.add('panel-view');
   modalLayer.setAttribute('aria-hidden', 'false');
   closeInventory();
-  renderCircuitPuzzle();
+  renderSelectorPuzzle();
 }
 
-function applyCircuitPuzzle() {
-  const solved = circuitState.every((value, i) => value === PANEL_SOLUTION[i]);
+function applySelectorPuzzle() {
+  const solved = selectorState.every((value, i) => value === PANEL_SOLUTION[i]);
+
   if (!solved) {
-    const bank = modalContent.querySelector('#selectorBank');
-    if (bank) {
-      bank.classList.remove('rejected');
-      requestAnimationFrame(() => bank.classList.add('rejected'));
-      setTimeout(() => bank.classList.remove('rejected'), 440);
+    const wrap = modalContent.querySelector('#selectorPhotoWrap');
+    if (wrap) {
+      wrap.classList.remove('rejected');
+      requestAnimationFrame(() => wrap.classList.add('rejected'));
+      setTimeout(() => wrap.classList.remove('rejected'), 460);
     }
     return;
   }
+
   state.flags.powerRestored = true;
   saveState();
   closeModal();
   refreshCurrentScene();
+  showToast('A relay snaps shut. Emergency power returns.');
 }
 
 function handleDetectAnomaly() {
   if (!state.flags.powerRestored || !hasItem('compass') || selectedItem !== 'compass') return;
+
   state.flags.anomalyDetected = true;
   selectedItem = null;
   saveState();
   renderInventory();
   refreshCurrentScene();
+
   setTimeout(() => {
     openModal(`
       <p class="eyebrow">PROLOGUE COMPLETE</p>
@@ -599,22 +705,50 @@ function handleDetectAnomaly() {
 function activateHotspot(spec, event) {
   event.stopPropagation();
   echo(event.clientX, event.clientY);
+
   switch (spec.action) {
-    case 'goto': goTo(spec.target); break;
-    case 'gear': handleGearSearch(); break;
-    case 'route': handleRoute(); break;
-    case 'collect': collectItem(spec.item); break;
+    case 'goto':
+      goTo(spec.target);
+      break;
+
+    case 'gear':
+      handleGearSearch();
+      break;
+
+    case 'route':
+      handleRoute();
+      break;
+
+    case 'collect':
+      collectItem(spec.item);
+      break;
+
     case 'mark-route':
       state.flags.mapExamined = true;
       saveState();
       refreshCurrentScene();
+      showToast('Bearing noted: 042° NE.');
       break;
-    case 'clear-roots': handleClearRoots(); break;
-    case 'use-flashlight': handleFlashlight(); break;
-    case 'inspect-machine': handleInspectMachine(); break;
-    case 'open-panel': openCircuitPuzzle(); break;
-    case 'detect-anomaly': handleDetectAnomaly(); break;
-    case 'inspect-powered-machine': break;
+
+    case 'clear-roots':
+      handleClearRoots();
+      break;
+
+    case 'use-flashlight':
+      handleFlashlight();
+      break;
+
+    case 'inspect-pressure':
+      handleInspectPressureBank();
+      break;
+
+    case 'open-panel':
+      openSelectorPuzzle();
+      break;
+
+    case 'detect-anomaly':
+      handleDetectAnomaly();
+      break;
   }
 }
 
@@ -632,12 +766,16 @@ function renderScene(scene) {
 async function goTo(sceneId, { record = true } = {}) {
   const next = SCENES[sceneId];
   if (!next || busy || sceneId === state.sceneId) return;
+
   busy = true;
   closeInventory();
   closeModal();
+
   const src = sceneSource(next);
+
   try {
     await preload(src);
+
     if (record) {
       const current = state.sceneId;
       if (current && current !== sceneId && state.history[state.history.length - 1] !== current) {
@@ -645,8 +783,10 @@ async function goTo(sceneId, { record = true } = {}) {
         state.history = state.history.slice(-30);
       }
     }
+
     state.sceneId = sceneId;
     saveState();
+
     image.classList.add('fade');
     setTimeout(() => {
       image.src = src;
@@ -663,24 +803,30 @@ async function goTo(sceneId, { record = true } = {}) {
 
 async function goBack() {
   if (busy) return;
+
   if (!modalLayer.hidden) {
     closeModal();
     return;
   }
+
   const target = state.history.pop();
+
   if (!target || !SCENES[target]) {
     back.hidden = true;
     saveState();
     return;
   }
+
   const next = SCENES[target];
   const src = sceneSource(next);
   busy = true;
   closeInventory();
+
   try {
     await preload(src);
     state.sceneId = target;
     saveState();
+
     image.classList.add('fade');
     setTimeout(() => {
       image.src = src;
@@ -722,17 +868,24 @@ hint.addEventListener('click', () => showToast(currentHint(), 3000));
 reset.addEventListener('click', window.resetEnigma);
 satchel.addEventListener('click', toggleInventory);
 modalClose.addEventListener('click', closeModal);
+
 modalLayer.addEventListener('click', event => {
   if (event.target === modalLayer && !modalLayer.classList.contains('ending')) closeModal();
 });
+
 inventorySlots.forEach(slot => {
   slot.addEventListener('click', () => selectInventoryItem(slot.dataset.itemId));
   slot.addEventListener('dblclick', () => showItemInfo(slot.dataset.itemId));
 });
+
 window.addEventListener('resize', () => setHotspots(SCENES[state.sceneId]));
+
 document.addEventListener('pointerdown', event => {
-  if (!event.target.closest('button') && !event.target.closest('.modal-card')) echo(event.clientX, event.clientY);
+  if (!event.target.closest('button') && !event.target.closest('.modal-card')) {
+    echo(event.clientX, event.clientY);
+  }
 });
+
 document.addEventListener('keydown', event => {
   if (event.key === 'ArrowLeft') goBack();
   if (event.key === 'Escape') {
@@ -743,22 +896,29 @@ document.addEventListener('keydown', event => {
 
 async function boot() {
   renderInventory();
+
   const scene = SCENES[state.sceneId];
   const firstSrc = sceneSource(scene);
+
   try {
     await preload(firstSrc);
     image.src = firstSrc;
     renderScene(scene);
     game.dataset.ready = 'true';
     loading.hidden = true;
+
     const sources = [...new Set([
       ...Object.values(SCENES).map(sceneSource),
       ...Object.values(MAP_SOURCES),
       MAP_DETAIL_SOURCE,
-      ENTRANCE_BLOCKED_SOURCE,
+      ENTRANCE_HIDDEN_SOURCE,
       TUNNEL_DARK_SOURCE,
+      SERVICE_ROOM_SOURCE,
+      PRESSURE_BANK_SOURCE,
+      SELECTOR_PANEL_SOURCE,
       ...Object.values(ITEM_DEFS).map(item => item.icon)
     ])];
+
     Promise.allSettled(sources.map(preload));
   } catch (err) {
     console.error(err);
