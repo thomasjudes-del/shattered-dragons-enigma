@@ -1,4 +1,4 @@
-const VERSION = '174';
+const VERSION = '175';
 const STORAGE_KEY = 'sde-inventory-v2';
 const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
 const MAP_SOURCES = {
@@ -8,7 +8,7 @@ const MAP_SOURCES = {
   none: `${R2_BASE}/map/map-none.png`
 };
 const MAP_SOURCE = MAP_SOURCES.both;
-const MAP_DETAIL_SOURCE = `${R2_BASE}/map/map-detail-v174.png`;
+const MAP_DETAIL_SOURCE = `${R2_BASE}/map/map-detail.png`;
 
 function applyRequestedReset() {
   const url = new URL(window.location.href);
@@ -57,9 +57,9 @@ const scenes = [
     id: 'map-detail',
     src: MAP_DETAIL_SOURCE,
     pos: 'center center',
-    hint: 'The red X marks a route beyond the biodiversity survey area.',
+    hint: 'A marked route converges on the red X near the lost citadel.',
     hotspots: [
-      { id: 'route-mark', action: 'goto', target: 'entrance', area: [63, 31, 25, 20], label: 'Follow the marked route', z: 3 }
+      { id: 'route-mark', action: 'goto', target: 'entrance', area: [49, 42, 12, 14], label: 'Follow the marked route', z: 3 }
     ]
   },
   {
@@ -87,6 +87,7 @@ const ITEM_DEFS = {
 
 const sceneIndex = new Map(scenes.map((scene, i) => [scene.id, i]));
 const game = document.getElementById('game');
+const stage = document.querySelector('.stage');
 const image = document.getElementById('scene');
 const sceneProps = document.getElementById('sceneProps');
 const hotspots = document.getElementById('hotspots');
@@ -254,22 +255,42 @@ function activateHotspot(spec, event) {
   }
 }
 
+function positionHotspot(button, spec, scene) {
+  const [left, top, width, height] = spec.area;
+  if (scene.id === 'map-detail' && image.naturalWidth && image.naturalHeight) {
+    const stageWidth = stage.clientWidth;
+    const stageHeight = stage.clientHeight;
+    const scale = Math.min(stageWidth / image.naturalWidth, stageHeight / image.naturalHeight);
+    const drawnWidth = image.naturalWidth * scale;
+    const drawnHeight = image.naturalHeight * scale;
+    const offsetX = (stageWidth - drawnWidth) / 2;
+    const offsetY = (stageHeight - drawnHeight) / 2;
+    Object.assign(button.style, {
+      left: `${offsetX + drawnWidth * left / 100}px`,
+      top: `${offsetY + drawnHeight * top / 100}px`,
+      width: `${drawnWidth * width / 100}px`,
+      height: `${drawnHeight * height / 100}px`
+    });
+    return;
+  }
+  Object.assign(button.style, {
+    left: `${left}%`,
+    top: `${top}%`,
+    width: `${width}%`,
+    height: `${height}%`
+  });
+}
+
 function setHotspots(scene) {
   hotspots.replaceChildren();
   for (const spec of getSceneHotspots(scene)) {
-    const [left, top, width, height] = spec.area;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `hotspot hotspot-${spec.action}`;
     button.dataset.hotspotId = spec.id;
     button.setAttribute('aria-label', spec.label || 'Explore');
-    Object.assign(button.style, {
-      left: `${left}%`,
-      top: `${top}%`,
-      width: `${width}%`,
-      height: `${height}%`,
-      zIndex: String(spec.z || 1)
-    });
+    button.style.zIndex = String(spec.z || 1);
+    positionHotspot(button, spec, scene);
     button.addEventListener('click', event => activateHotspot(spec, event));
     hotspots.appendChild(button);
   }
@@ -280,6 +301,8 @@ function render(i) {
   const scene = scenes[i];
   game.dataset.scene = scene.id;
   image.style.objectPosition = scene.pos || 'center center';
+  image.style.objectFit = scene.id === 'map-detail' ? 'contain' : 'cover';
+  image.style.background = scene.id === 'map-detail' ? '#080603' : '#000';
   image.style.transform = 'none';
   image.style.transformOrigin = 'center center';
   image.classList.remove('map-detail-fallback');
@@ -349,6 +372,7 @@ satchel.addEventListener('click', toggleInventory);
 inventorySlots.forEach(slot => {
   slot.addEventListener('click', () => selectInventoryItem(slot.dataset.itemId));
 });
+window.addEventListener('resize', () => setHotspots(scenes[index]));
 document.addEventListener('pointerdown', event => {
   if (!event.target.closest('button')) echo(event.clientX, event.clientY);
 });
