@@ -1,0 +1,42 @@
+.satchel.item-added{animation:satchelPickup .5s ease}
+
+.tunnel-darkness{position:absolute;inset:0;background:rgba(0,0,0,.9);transition:background .24s ease}
+.tunnel-darkness.flashlight-on{background:radial-gradient(circle at 50% 47%,rgba(0,0,0,0) 0 18%,rgba(0,0,0,.22) 34%,rgba(0,0,0,.68) 64%,rgba(0,0,0,.9) 100%)}
+
+.service-power-off{position:absolute;inset:0;background:rgba(0,0,0,.38);mix-blend-mode:multiply;pointer-events:none;transition:opacity .32s ease}
+.service-power-glow{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 52% 48%,rgba(222,162,76,.08),transparent 34%),radial-gradient(circle at 13% 43%,rgba(51,118,176,.11),transparent 26%);animation:serviceGlow 2.5s ease-in-out infinite}
+
+.modal-layer.photo-view,.modal-layer.panel-view{background:rgba(0,0,0,.9);padding:max(10px,env(safe-area-inset-top)) 10px max(10px,env(safe-area-inset-bottom))}
+.modal-layer.photo-view .modal-card{width:min(96vw,720px);max-height:92dvh;padding:0;border:1px solid rgba(188,160,105,.22);border-radius:10px;background:#050504;overflow:hidden}
+.modal-layer.panel-view .modal-card{width:min(90vw,430px);max-height:92dvh;padding:0;border:1px solid rgba(188,160,105,.24);border-radius:10px;background:#050504;overflow:hidden}
+.modal-layer.photo-view .modal-close,.modal-layer.panel-view .modal-close{z-index:8;right:10px;top:10px;background:rgba(0,0,0,.76);border-color:rgba(232,211,166,.5);color:#f0dfb7}
+
+.photo-inspect{width:100%;height:100%;display:grid;place-items:center;background:#020202}
+.photo-inspect-image{display:block;width:100%;height:auto;max-height:92dvh;object-fit:contain}
+
+.selector-photo-wrap{position:relative;width:100%;background:#080705;overflow:hidden}
+.selector-photo{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+
+.panel-symbol-plaque{position:absolute;z-index:4;left:var(--x);top:14.3%;transform:translateX(-50%);width:15%;height:6.8%;display:grid;place-items:center;border:1px solid rgba(120,96,54,.72);border-radius:3px;background:linear-gradient(180deg,rgba(46,39,28,.98),rgba(18,17,14,.99));box-shadow:inset 0 0 7px rgba(0,0,0,.8),0 2px 5px rgba(0,0,0,.55);color:#d6b46d;font:700 21px/1 Georgia,serif;text-shadow:0 1px 2px #000;pointer-events:none}
+
+.panel-lever-target{position:absolute;z-index:5;left:var(--x);top:21%;transform:translateX(-50%);width:17%;height:35%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.panel-lever-target:active{background:radial-gradient(circle at 50% 56%,rgba(225,180,91,.12),transparent 46%)}
+.panel-position{position:absolute;left:50%;bottom:2%;transform:translateX(-50%);width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(198,161,90,.6);border-radius:50%;background:radial-gradient(circle at 40% 35%,#6d5430,#221b12 70%);box-shadow:inset 0 0 8px rgba(0,0,0,.8),0 2px 5px rgba(0,0,0,.6);color:#f0cf87;font:700 12px/1 system-ui,sans-serif;text-shadow:0 1px 2px #000}
+
+.panel-engage{position:absolute;z-index:6;left:50%;bottom:7%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;min-width:120px;height:42px;padding:0 14px;border:1px solid rgba(157,119,62,.7);border-radius:5px;background:linear-gradient(180deg,rgba(55,46,34,.96),rgba(22,20,17,.98));box-shadow:inset 0 0 10px rgba(0,0,0,.72),0 4px 10px rgba(0,0,0,.58);color:#d9c49b;font:700 10px/1 system-ui,sans-serif;letter-spacing:.12em;cursor:pointer}
+.panel-engage span{width:17px;height:17px;border-radius:50%;border:2px solid #3c241c;background:radial-gradient(circle at 40% 35%,#8a3d27,#36130d 70%);box-shadow:0 0 0 2px rgba(0,0,0,.4),inset 0 0 5px rgba(0,0,0,.7)}
+.panel-engage:active span{background:radial-gradient(circle at 40% 35%,#c66b45,#4b170f 70%)}
+
+.selector-photo-wrap.rejected{animation:selectorReject .44s ease}
+
+@keyframes satchelPickup{0%,100%{transform:scale(1)}45%{transform:scale(1.13)}}
+@keyframes selectorReject{0%,100%{transform:translateX(0);filter:none}24%{transform:translateX(-5px);filter:saturate(.8) brightness(.92)}72%{transform:translateX(5px);filter:saturate(.8) brightness(.92)}}
+@keyframes serviceGlow{0%,100%{opacity:.58}50%{opacity:1}}
+
+@media(max-width:700px){
+  .modal-layer.photo-view .modal-card{width:96vw}
+  .modal-layer.panel-view .modal-card{width:min(88vw,390px)}
+  .panel-symbol-plaque{font-size:18px}
+  .panel-position{width:29px;height:29px;font-size:11px}
+  .panel-engage{height:40px;min-width:112px}
+}
