@@ -17,9 +17,9 @@
 .pump-panel-wrap{position:relative;width:100%;background:#080705;overflow:hidden}
 .pump-panel-photo{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
 
-.pump-symbol-plaque{position:absolute;z-index:8;left:var(--x);top:20.2%;transform:translateX(-50%);width:13%;height:4.8%;display:grid;place-items:center;border:1px solid rgba(112,91,55,.78);border-radius:2px;background:linear-gradient(180deg,rgba(52,44,31,.95),rgba(24,20,15,.98));box-shadow:inset 0 0 7px rgba(0,0,0,.82),0 2px 4px rgba(0,0,0,.5);color:#c9aa6b;font:700 17px/1 Georgia,serif;text-shadow:0 1px 2px #000;pointer-events:none}
+.pump-symbol-plaque{position:absolute;z-index:8;left:var(--x);top:17.4%;transform:translateX(-50%);width:12%;height:4.5%;display:grid;place-items:center;border:1px solid rgba(112,91,55,.78);border-radius:2px;background:linear-gradient(180deg,rgba(52,44,31,.95),rgba(24,20,15,.98));box-shadow:inset 0 0 7px rgba(0,0,0,.82),0 2px 4px rgba(0,0,0,.5);color:#c9aa6b;font:700 17px/1 Georgia,serif;text-shadow:0 1px 2px #000;pointer-events:none}
 
-.pump-lever-control{position:absolute;z-index:9;left:var(--x);top:25%;transform:translateX(-50%);width:17%;height:34%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:visible}
+.pump-lever-control{position:absolute;z-index:9;left:var(--x);top:24%;transform:translateX(-50%);width:17%;height:34%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow:visible}
 .pump-lever-control:active{filter:brightness(1.08)}
 
 .pump-lever-mask{position:absolute;z-index:1;left:50%;top:0;width:30%;height:76%;transform:translateX(-50%);border-radius:40%;background:linear-gradient(90deg,transparent,rgba(34,29,23,.68) 24%,rgba(56,47,36,.76) 50%,rgba(33,28,22,.68) 76%,transparent);mix-blend-mode:multiply;filter:blur(.3px);pointer-events:none}
@@ -32,7 +32,7 @@
 .pump-detents{position:absolute;z-index:6;left:50%;bottom:0;transform:translateX(-50%);width:92%;display:flex;justify-content:space-between;align-items:center;padding:0 2px;color:rgba(210,188,146,.78);font:700 8px/1 system-ui,sans-serif;text-shadow:0 1px 2px #000;pointer-events:none}
 .pump-detents i{font-style:normal;display:grid;place-items:center;width:13px;height:13px;border-radius:50%;background:rgba(19,16,12,.48);border:1px solid rgba(126,102,62,.42)}
 
-.pump-engage-target{position:absolute;z-index:12;left:50%;bottom:10.2%;transform:translateX(-50%);width:28%;height:8.8%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:8px}
+.pump-engage-target{position:absolute;z-index:12;left:50%;bottom:23.3%;transform:translateX(-50%);width:29%;height:8.5%;border:0;background:transparent;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:8px}
 .pump-engage-target:active{background:radial-gradient(circle,rgba(184,64,35,.18),transparent 62%);box-shadow:0 0 20px rgba(160,56,34,.18)}
 
 .pump-panel-wrap.rejected{animation:selectorReject .44s ease}
