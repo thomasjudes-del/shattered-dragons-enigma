@@ -2,8 +2,15 @@ import { createMcpHandler } from "agents/mcp/server";
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+const providedFileSchema = z.object({
+  download_url: z.string().url(),
+  file_id: z.string().min(1),
+  mime_type: z.string().optional(),
+  file_name: z.string().optional(),
+}).passthrough();
+
 function createServer(env, origin) {
-  const server = new McpServer({ name: "Confluence Asset Publisher", version: "1.1.1" });
+  const server = new McpServer({ name: "Confluence Asset Publisher", version: "1.2.0" });
 
   server.registerTool(
     "publish_asset",
@@ -11,7 +18,7 @@ function createServer(env, origin) {
       description: "Publish an image or other file supplied by ChatGPT to the Confluence of Minds R2 bucket without recompressing it, then return its public Worker URL.",
       inputSchema: {
         key: z.string().min(1).describe("R2 object key, for example shattered-dragons/scene-06.png"),
-        file: z.string().describe("File supplied by ChatGPT. Do not encode the file as base64."),
+        file: providedFileSchema.describe("File supplied by ChatGPT."),
       },
       _meta: {
         "openai/fileParams": ["file"],
@@ -19,14 +26,14 @@ function createServer(env, origin) {
     },
     async ({ key, file }) => {
       if (key.includes("..") || key.startsWith("/")) throw new Error("Invalid key");
-      if (!file) throw new Error("No file supplied");
+      if (!file?.download_url || !file?.file_id) throw new Error("No valid ChatGPT file supplied");
 
-      const source = await fetch(file);
+      const source = await fetch(file.download_url);
       if (!source.ok) throw new Error(`Unable to fetch supplied file: ${source.status}`);
 
       const body = await source.arrayBuffer();
       if (body.byteLength === 0) throw new Error("Empty asset");
-      const contentType = source.headers.get("content-type") || "application/octet-stream";
+      const contentType = file.mime_type || source.headers.get("content-type") || "application/octet-stream";
 
       const digest = await crypto.subtle.digest("SHA-256", body);
       const sha256 = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -34,7 +41,7 @@ function createServer(env, origin) {
 
       await env.ASSETS.put(key, body, {
         httpMetadata: { contentType },
-        customMetadata: { sha256 },
+        customMetadata: { sha256, sourceFileId: file.file_id },
       });
 
       return {
@@ -48,6 +55,7 @@ function createServer(env, origin) {
             contentType,
             path,
             url: `${origin}${path}`,
+            sourceFileId: file.file_id,
           }),
         }],
       };
@@ -77,6 +85,6 @@ export default {
       return createMcpHandler(() => createServer(env, url.origin))(request, env, ctx);
     }
 
-    return Response.json({ ok: true, service: "Confluence Asset Publisher", version: "1.1.1", mcp: "/mcp" });
+    return Response.json({ ok: true, service: "Confluence Asset Publisher", version: "1.2.0", mcp: "/mcp" });
   },
 };
