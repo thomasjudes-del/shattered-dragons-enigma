@@ -1,4 +1,4 @@
-const VERSION = '173';
+const VERSION = '174';
 const STORAGE_KEY = 'sde-inventory-v2';
 const R2_BASE = 'https://shattered-dragons-enigma.thomas-judes.workers.dev/assets/shattered-dragons';
 const MAP_SOURCES = {
@@ -8,6 +8,7 @@ const MAP_SOURCES = {
   none: `${R2_BASE}/map/map-none.png`
 };
 const MAP_SOURCE = MAP_SOURCES.both;
+const MAP_DETAIL_SOURCE = `${R2_BASE}/map/map-detail-v174.png`;
 
 function applyRequestedReset() {
   const url = new URL(window.location.href);
@@ -54,11 +55,11 @@ const scenes = [
   },
   {
     id: 'map-detail',
-    src: MAP_SOURCE,
-    pos: 'center 68%',
+    src: MAP_DETAIL_SOURCE,
+    pos: 'center center',
     hint: 'The red X marks a route beyond the biodiversity survey area.',
     hotspots: [
-      { id: 'route-mark', action: 'goto', target: 'entrance', area: [54, 43, 18, 16], label: 'Follow the marked route', z: 3 }
+      { id: 'route-mark', action: 'goto', target: 'entrance', area: [63, 31, 25, 20], label: 'Follow the marked route', z: 3 }
     ]
   },
   {
@@ -140,7 +141,7 @@ function currentMapSource() {
 }
 
 function sceneSource(scene) {
-  if (scene.id === 'map' || scene.id === 'map-detail') return currentMapSource();
+  if (scene.id === 'map') return currentMapSource();
   return scene.src;
 }
 
@@ -220,7 +221,7 @@ function getSceneHotspots(scene) {
 
 async function refreshMapImage() {
   const scene = scenes[index];
-  if (scene.id !== 'map' && scene.id !== 'map-detail') return;
+  if (scene.id !== 'map') return;
   const src = currentMapSource();
   try {
     await preload(src);
@@ -281,7 +282,7 @@ function render(i) {
   image.style.objectPosition = scene.pos || 'center center';
   image.style.transform = 'none';
   image.style.transformOrigin = 'center center';
-  image.classList.toggle('map-detail-fallback', scene.id === 'map-detail');
+  image.classList.remove('map-detail-fallback');
   back.hidden = i === 0;
   sceneProps.replaceChildren();
   setHotspots(scene);
@@ -367,7 +368,8 @@ async function boot() {
     loading.hidden = true;
     const sources = [...new Set([
       ...scenes.slice(1).map(sceneSource),
-      ...Object.values(MAP_SOURCES)
+      ...Object.values(MAP_SOURCES),
+      MAP_DETAIL_SOURCE
     ])];
     Promise.allSettled(sources.map(preload));
   } catch (err) {
